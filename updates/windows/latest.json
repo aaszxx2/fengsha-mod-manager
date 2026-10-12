@@ -1,0 +1,11 @@
+{
+  "version": "0.3.1",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.1/app-ba23e4c738ffe965.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.1/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6084120,
+  "sha256": "ba23e4c738ffe9654fb4223227dd8b9185dad45194f34d2a3ddf1efb7cfe439d",
+  "releaseNotes": [
+    "修复：部分玩家点「检查更新」提示「更新服务暂不可用」。现在更新检查有两个线路，一条连不上会自动换另一条",
+    "顺带把更新失败的提示改得更明确，不再让人以为是服务挂了"
+  ]
+}
