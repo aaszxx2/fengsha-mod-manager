@@ -24,7 +24,7 @@
           <p>识别你的游戏目录，管理 UE4SS 模组安装与加载顺序，再从云端工坊发现玩家创作。一个桌面工具，串起下载、安装与启动。</p>
           <div class="hero-actions">
             <a id="downloadButton" class="download-button" href="#download-info" aria-disabled="true"><span class="button-icon">↓</span><span id="downloadLabel">获取桌面版</span></a>
-            <span class="version-note"><b id="versionLabel">Windows x64 · v0.2.0</b><br/><span id="fileLabel">便携版 ZIP · 约 142 MiB</span></span>
+            <span class="version-note"><b id="versionLabel">Windows x64 · v0.2.0</b><br/><span id="fileLabel">安装程序 · 约 95 MiB</span></span>
           </div>
           <div id="releaseState" class="release-state" role="status" aria-live="polite">正在确认当前下载版本…</div>
         </div>
@@ -42,12 +42,12 @@
       <section id="guide" aria-labelledby="guide-title">
         <div class="section-title"><h2 id="guide-title">开始使用</h2><span>QUICK START</span></div>
         <div class="guide">
-          <article class="guide-card"><h3>安装桌面版</h3><ol><li>下载完整便携版 ZIP 并解压。</li><li>保留解压后的整个文件夹，不要单独移动 EXE。</li><li>运行“烽沙 MOD 管理器.exe”，选择或扫描游戏目录。</li></ol></article>
+          <article class="guide-card"><h3>安装桌面版</h3><ol><li>下载安装程序，双击运行。</li><li>按向导选择安装位置，需要的话勾选桌面快捷方式。</li><li>装完从桌面启动，选择或扫描游戏目录。</li></ol></article>
           <article class="guide-card"><h3>让模组在游戏里生效</h3><ol><li>先按游戏版本安装并确认 UE4SS 前置可正常加载。</li><li>从工坊下载 MOD，解压后在本地管理中安装。</li><li>检查启用状态和加载顺序，再通过 Steam 启动游戏。</li></ol></article>
         </div>
         <div class="note"><span>!</span><span><b>注意：</b>管理器会把 MOD 安装到 UE4SS 的实际 Mods 目录，并更新 mods.txt。仅复制文件不等于游戏内已验证生效；请确保 UE4SS 与游戏版本匹配，并谨慎安装来源不明的模组。</span></div>
       </section>
-      <section id="download-info" class="download-end"><div><strong>准备好管理你的模组了吗？</strong><p>下载后解压整个文件夹即可运行，后续更新可由管理器内置更新器完成。</p></div><a id="downloadButtonBottom" class="download-button" href="#download-info" aria-disabled="true"><span>↓</span><span>下载桌面版</span></a></section>
+      <section id="download-info" class="download-end"><div><strong>准备好管理你的模组了吗？</strong><p>下载安装程序后一路「下一步」即可，后续更新由管理器内置更新器自动完成。</p></div><a id="downloadButtonBottom" class="download-button" href="#download-info" aria-disabled="true"><span>↓</span><span>下载安装程序</span></a></section>
     </main>
     <footer class="footer"><span>烽沙 MOD 管理器 · 玩家创作工具</span><span><a href="./">返回云端工坊</a>　·　Windows x64</span></footer>
   </div>
@@ -58,9 +58,9 @@
     function setDownload(url, version, size) {
       for (const link of [button, bottom]) { link.href = url; link.target = '_blank'; link.rel = 'noopener'; link.removeAttribute('aria-disabled') }
       document.querySelector('#versionLabel').textContent = `Windows x64 · v${version || '0.2.0'}`
-      if (size) document.querySelector('#fileLabel').textContent = `便携版 ZIP · ${size}`
-      document.querySelector('#downloadLabel').textContent = '下载完整便携版'
-      state.textContent = '下载源已就绪 · 完整便携版 ZIP'
+      if (size) document.querySelector('#fileLabel').textContent = `安装程序 · ${size}`
+      document.querySelector('#downloadLabel').textContent = '下载安装程序'
+      state.textContent = '下载源已就绪 · Windows 安装程序'
       state.classList.add('ready')
     }
     fetch('download.json', { cache: 'no-store' }).then(response => {
