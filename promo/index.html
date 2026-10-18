@@ -5,295 +5,244 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>烽沙 MOD 管理器 — 把模组装进游戏，只需要一次点击</title>
 <meta name="description" content="烽沙 MOD 管理器：自动识别 UE4SS 与 PAK 模组，下载即安装，装完还会告诉你它到底能不能用。">
-<meta name="theme-color" content="#14100C">
-<script>
-  // ?static=1 关闭入场动画，供截图/打印使用（也让无 JS 环境更安全）
-  if (!new URLSearchParams(location.search).has('static')) {
-    document.documentElement.classList.add('js')
-  }
-</script>
+<meta name="theme-color" content="#0E1418">
 <link rel="icon" href="../assets/fengsha-mod-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* ── 设计令牌 ─────────────────────────────────────────────
-     取意「水墨山水 × 军令文书」：深褐黑作底（不是纯黑），宣纸白作文，
-     朱砂只用在印章与关键动作上，青铜作边框。金色留给游戏本体的识别度，
-     页面自己不再抢。 */
+  /* 对齐管理器工坊的视觉语言：深蓝黑底 + 单一鹰角黄（#F3D016，从工坊截图实测），
+     锐利几何、斜切角、细网格。黄色只出现在可操作项和关键信息上。 */
   :root {
-    --ink:        #14100C;   /* 底：深褐黑，仿旧纸背光 */
-    --ink-2:      #1C1711;   /* 次层 */
-    --ink-3:      #241D15;   /* 卡片 */
-    --paper:      #E8DFD0;   /* 宣纸白 */
-    --paper-dim:  #A99C86;   /* 次级文字 */
-    --cinnabar:   #C8412C;   /* 朱砂：印章、CTA */
-    --cinnabar-2: #E4573C;   /* 朱砂亮 */
-    --bronze:     #A8863C;   /* 青铜：边框、序号 */
-    --rule:       rgba(168,134,60,.22);
-
-    --serif: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
-    --sans:  'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-    --mono:  'JetBrains Mono', ui-monospace, monospace;
-
-    --ease: cubic-bezier(.22,.61,.36,1);
-    --pad: clamp(20px, 5vw, 96px);
+    --bg: #0E1418;
+    --bg-2: #12191F;
+    --panel: #161E22;
+    --panel-2: #1B2429;
+    --line: #24303A;
+    --text: #E4E9EC;
+    --text-dim: #8B9AA3;
+    --yellow: #F3D016;
+    --sans: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    --display: 'Archivo Black', 'Noto Sans SC', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(.2,.7,.3,1);
+    --pad: clamp(20px, 5vw, 92px);
+    --cut: 14px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
-    background: var(--ink);
-    color: var(--paper);
-    font-family: var(--sans);
-    font-weight: 300;
-    line-height: 1.75;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-weight: 400; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
   }
-  ::selection { background: var(--cinnabar); color: #fff; }
+  ::selection { background: var(--yellow); color: #0E1418; }
   a { color: inherit; text-decoration: none; }
   img { display: block; max-width: 100%; }
 
-  /* 纸纹：极淡的噪点，避免大面积纯色显得廉价 */
+  /* 细网格底纹：战术界面感 */
   body::before {
-    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
-    opacity: .035; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
   }
 
-  /* ── 顶部 ───────────────────────────────────────────────── */
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 50;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 18px var(--pad);
-    transition: background .4s var(--ease), border-color .4s var(--ease), backdrop-filter .4s;
-    border-bottom: 1px solid transparent;
+    padding: 16px var(--pad); border-bottom: 1px solid transparent;
+    transition: background .35s var(--ease), border-color .35s var(--ease);
   }
-  header.scrolled {
-    background: rgba(20,16,12,.82);
-    backdrop-filter: blur(14px) saturate(1.2);
-    border-bottom-color: var(--rule);
-  }
+  header.scrolled { background: rgba(14,20,24,.9); backdrop-filter: blur(12px); border-bottom-color: var(--line); }
   .brand { display: flex; align-items: center; gap: 12px; }
-  .brand svg { width: 30px; height: 30px; flex: none; }
-  .brand-name { font-family: var(--serif); font-weight: 600; font-size: 17px; letter-spacing: .12em; }
-  .brand-sub { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; color: var(--paper-dim); }
-  nav { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 34px); flex: none; }
-  /* 窄屏只留最关键的「下载」，其余靠页面内滚动 */
+  .brand-mark {
+    width: 34px; height: 34px; display: grid; place-items: center;
+    background: var(--yellow); color: #0E1418;
+    clip-path: polygon(0 0, 100% 0, 100% 68%, 68% 100%, 0 100%);
+    font-family: var(--display); font-size: 15px;
+  }
+  .brand-text b { font-family: var(--display); font-size: 16px; letter-spacing: .04em; display: block; }
+  .brand-text span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .26em; color: var(--text-dim); }
+  nav { display: flex; align-items: center; gap: clamp(14px, 2.2vw, 32px); flex: none; }
+  nav a { font-size: 13.5px; color: var(--text-dim); position: relative; padding: 6px 0; transition: color .22s var(--ease); }
+  nav a::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--yellow); transition: width .28s var(--ease); }
+  nav a:hover { color: var(--text); }
+  nav a:hover::after { width: 100%; }
   @media (max-width: 620px) {
     nav a:not(:last-child) { display: none; }
-    .brand-sub { display: none; }
+    .brand-text span { display: none; }
   }
-  nav a {
-    font-size: 14px; color: var(--paper-dim); position: relative; padding: 4px 0;
-    transition: color .25s var(--ease);
-  }
-  nav a::after {
-    content: ''; position: absolute; left: 0; bottom: 0; height: 1px; width: 0;
-    background: var(--cinnabar); transition: width .3s var(--ease);
-  }
-  nav a:hover { color: var(--paper); }
-  nav a:hover::after { width: 100%; }
-  @media (max-width: 760px) { nav .hide-sm { display: none; } }
 
-  /* ── Hero ───────────────────────────────────────────────── */
   .hero {
     position: relative; min-height: 100svh;
     display: flex; align-items: center;
-    padding: clamp(110px, 16vh, 190px) var(--pad) clamp(70px, 12vh, 120px);
-    overflow: hidden;
+    padding: clamp(110px, 15vh, 180px) var(--pad) clamp(64px, 10vh, 110px);
+    overflow: hidden; border-bottom: 1px solid var(--line);
   }
   .hero-bg {
-    position: absolute; inset: -8% 0 -8% 0; z-index: 0;
-    background: url('assets/hero-landscape.jpg') center 42% / cover no-repeat;
-    will-change: transform;
+    position: absolute; inset: -6% 0; z-index: 0;
+    background: url('assets/hero-landscape.jpg') center 40% / cover no-repeat;
+    opacity: .36; will-change: transform;
   }
   .hero-bg::after {
     content: ''; position: absolute; inset: 0;
     background:
-      linear-gradient(180deg, rgba(20,16,12,.86) 0%, rgba(20,16,12,.55) 34%, rgba(20,16,12,.78) 72%, var(--ink) 100%),
-      radial-gradient(120% 80% at 76% 26%, rgba(200,65,44,.14), transparent 60%);
+      linear-gradient(100deg, var(--bg) 18%, rgba(14,20,24,.72) 52%, rgba(14,20,24,.35) 100%),
+      linear-gradient(180deg, rgba(14,20,24,.7), transparent 32%, var(--bg) 96%);
+  }
+  .hero::after {
+    content: ''; position: absolute; right: -10%; top: -20%;
+    width: 52vw; height: 52vw; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(243,208,22,.13), transparent 62%);
+    z-index: 1;
   }
   .hero-inner { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; width: 100%; }
 
-  .eyebrow {
+  .tag {
     display: inline-flex; align-items: center; gap: 10px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
-    color: var(--bronze); text-transform: uppercase; margin-bottom: 26px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: var(--yellow); margin-bottom: 26px;
   }
-  .eyebrow::before { content: ''; width: 34px; height: 1px; background: var(--bronze); opacity: .7; }
+  .tag::before { content: ''; width: 26px; height: 2px; background: var(--yellow); }
 
   .hero h1 {
-    font-family: var(--serif); font-weight: 900;
-    /* 最小值按 390px 视口反推：8 个字 × 30px ≈ 240px，留足左右 padding 不溢出 */
-    font-size: clamp(30px, 7.6vw, 118px);
-    line-height: 1.06; letter-spacing: .02em;
-    margin-bottom: 26px;
-    overflow-wrap: break-word;
+    font-family: var(--display);
+    font-size: clamp(30px, 7.4vw, 104px);
+    line-height: 1.08; letter-spacing: -.01em; margin-bottom: 26px;
   }
   .hero h1 .line { display: block; overflow: hidden; }
-  .hero h1 .line > span { display: block; transform: translateY(105%); animation: rise 1.15s var(--ease) forwards; }
-  .hero h1 .line:nth-child(2) > span { animation-delay: .14s; }
+  .hero h1 .line > span { display: block; transform: translateY(110%); animation: rise 1s var(--ease) forwards; }
+  .hero h1 .line:nth-child(2) > span { animation-delay: .12s; }
   @keyframes rise { to { transform: translateY(0); } }
-
   .hero h1 em {
-    font-style: normal; color: var(--cinnabar);
-    position: relative; display: inline-block;
-  }
-  /* 朱砂印章：页面唯一的一处「重彩」 */
-  .hero h1 em::after {
-    content: ''; position: absolute; right: -6px; bottom: 12%;
-    width: .16em; height: .16em; border-radius: 50%;
-    background: var(--cinnabar); opacity: .55;
+    font-style: normal; color: #0E1418; background: var(--yellow);
+    padding: 0 .18em; display: inline-block; line-height: 1.02; transform: translateY(-.04em);
   }
 
   .hero p.lede {
-    max-width: 46ch; font-size: clamp(15px, 1.5vw, 18px);
-    color: var(--paper-dim); margin-bottom: 40px;
-    opacity: 0; animation: fade 1s var(--ease) .5s forwards;
+    max-width: 44ch; font-size: clamp(14.5px, 1.4vw, 17px);
+    color: var(--text-dim); margin-bottom: 38px; font-weight: 300;
+    opacity: 0; animation: fade 1s var(--ease) .45s forwards;
   }
   @keyframes fade { to { opacity: 1; } }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; opacity: 0; animation: fade 1s var(--ease) .68s forwards; }
-
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; opacity: 0; animation: fade 1s var(--ease) .62s forwards; }
   .btn {
     display: inline-flex; align-items: center; gap: 10px;
-    padding: 15px 30px; font-size: 15px; font-weight: 500;
-    border: 1px solid transparent; cursor: pointer;
-    transition: transform .25s var(--ease), background .25s var(--ease), border-color .25s, color .25s;
-    font-family: var(--sans);
+    padding: 15px 28px; font-size: 14.5px; font-weight: 500;
+    font-family: var(--sans); cursor: pointer; border: 0;
+    transition: background .22s var(--ease), color .22s var(--ease), transform .22s var(--ease), box-shadow .22s;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
   }
   .btn svg { width: 17px; height: 17px; }
-  .btn-primary { background: var(--cinnabar); color: #FFF6F2; }
-  .btn-primary:hover { background: var(--cinnabar-2); transform: translateY(-2px); }
-  .btn-ghost { border-color: var(--rule); color: var(--paper); background: rgba(255,255,255,.02); }
-  .btn-ghost:hover { border-color: var(--bronze); background: rgba(168,134,60,.08); transform: translateY(-2px); }
-  .btn:focus-visible { outline: 2px solid var(--bronze); outline-offset: 3px; }
+  .btn-primary { background: var(--yellow); color: #0E1418; }
+  .btn-primary:hover { background: #FFE04A; transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn-ghost:hover { box-shadow: inset 0 0 0 1px var(--yellow); color: var(--yellow); transform: translateY(-2px); }
+  .btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
 
   .hero-meta {
-    margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px 26px;
-    font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; color: var(--paper-dim);
-    opacity: 0; animation: fade 1s var(--ease) .84s forwards;
+    margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--text-dim);
+    opacity: 0; animation: fade 1s var(--ease) .78s forwards;
   }
-  .hero-meta span { display: inline-flex; align-items: center; gap: 7px; }
-  .hero-meta i { width: 5px; height: 5px; border-radius: 50%; background: var(--bronze); display: inline-block; }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-meta span::before { content: ''; width: 4px; height: 4px; background: var(--yellow); }
 
-  /* 滚动提示 */
   .scroll-cue {
-    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
-    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 9px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: .28em; color: var(--paper-dim);
+    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .3em; color: var(--text-dim);
   }
-  .scroll-cue span { width: 1px; height: 44px; background: linear-gradient(var(--bronze), transparent); animation: cue 2.4s ease-in-out infinite; }
-  @keyframes cue { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+  .scroll-cue i { width: 1px; height: 40px; background: linear-gradient(var(--yellow), transparent); animation: cue 2.2s ease-in-out infinite; }
+  @keyframes cue { 0%,100% { opacity: .2; } 50% { opacity: 1; } }
   @media (max-height: 720px) { .scroll-cue { display: none; } }
 
-  /* ── 通用区块 ───────────────────────────────────────────── */
-  section { position: relative; padding: clamp(72px, 11vh, 132px) var(--pad); }
+  section { position: relative; padding: clamp(64px, 10vh, 120px) var(--pad); }
   .wrap { max-width: 1180px; margin: 0 auto; }
-  .sec-head { display: flex; align-items: baseline; gap: 20px; margin-bottom: clamp(40px, 6vh, 64px); flex-wrap: wrap; }
-  .sec-num { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--bronze); }
-  .sec-title { font-family: var(--serif); font-weight: 600; font-size: clamp(26px, 3.6vw, 40px); letter-spacing: .04em; }
-  .sec-desc { color: var(--paper-dim); font-size: 14.5px; max-width: 52ch; margin-left: auto; }
+  .sec-head { margin-bottom: clamp(34px, 5vh, 56px); }
+  .sec-num {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .28em; color: var(--yellow);
+    margin-bottom: 14px;
+  }
+  .sec-num::before { content: ''; width: 18px; height: 1px; background: var(--yellow); }
+  .sec-title { font-family: var(--display); font-size: clamp(24px, 3.4vw, 38px); line-height: 1.2; letter-spacing: .01em; }
+  .sec-desc { color: var(--text-dim); font-size: 14px; max-width: 54ch; margin-top: 12px; font-weight: 300; }
 
-  /* ── 功能：军令状 ───────────────────────────────────────── */
-  .orders { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
-  .order {
-    position: relative; background: var(--ink-2); padding: 38px 32px 34px;
-    transition: background .35s var(--ease);
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  .card {
+    position: relative; background: var(--panel); padding: 30px 28px 32px;
+    border: 1px solid var(--line);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+    transition: border-color .3s var(--ease), background .3s var(--ease), transform .3s var(--ease);
   }
-  .order:hover { background: var(--ink-3); }
-  .order::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-    background: var(--cinnabar); transform: scaleX(0); transform-origin: left;
-    transition: transform .5s var(--ease);
+  .card:hover { border-color: rgba(243,208,22,.55); background: var(--panel-2); transform: translateY(-3px); }
+  .card-num {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .2em;
+    color: #0E1418; background: var(--yellow); padding: 3px 9px; display: inline-block; margin-bottom: 20px;
   }
-  .order:hover::before { transform: scaleX(1); }
-  .order-num {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .24em;
-    color: var(--bronze); margin-bottom: 22px; display: block;
-  }
-  .order h3 { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: .05em; margin-bottom: 12px; }
-  .order p { font-size: 14px; color: var(--paper-dim); line-height: 1.85; }
-  .order .seal {
-    position: absolute; right: 24px; bottom: 22px; width: 42px; height: 42px;
-    border: 1.5px solid var(--cinnabar); border-radius: 3px;
-    display: grid; place-items: center; opacity: .28;
-    font-family: var(--serif); font-size: 15px; color: var(--cinnabar);
-    transform: rotate(-6deg); transition: opacity .35s var(--ease);
-  }
-  .order:hover .seal { opacity: .62; }
+  .card h3 { font-weight: 700; font-size: 18px; letter-spacing: .02em; margin-bottom: 10px; }
+  .card p { font-size: 13.5px; color: var(--text-dim); line-height: 1.8; font-weight: 300; }
 
-  /* ── 界面展示 ───────────────────────────────────────────── */
-  .showcase { display: grid; grid-template-columns: 1.55fr .95fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+  .showcase { display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(22px, 3.6vw, 52px); align-items: center; }
   @media (max-width: 900px) { .showcase { grid-template-columns: 1fr; } }
-  .shot {
-    position: relative; border: 1px solid var(--rule); background: var(--ink-2);
-    padding: 8px; overflow: hidden;
-  }
+  .shot { border: 1px solid var(--line); background: var(--panel); padding: 7px; position: relative; }
+  .shot::before { content: ''; position: absolute; left: -1px; top: -1px; width: 34px; height: 3px; background: var(--yellow); }
   .shot img { width: 100%; height: auto; }
-  .shot::after {
-    content: ''; position: absolute; inset: 8px; pointer-events: none;
-    box-shadow: inset 0 0 60px rgba(20,16,12,.5);
-  }
-  .shot-caption { margin-top: 14px; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--paper-dim); }
-  .showcase-copy h3 { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 30px); font-weight: 600; letter-spacing: .04em; margin-bottom: 18px; }
-  .showcase-copy ul { list-style: none; display: grid; gap: 14px; }
-  .showcase-copy li { display: flex; gap: 12px; font-size: 14.5px; color: var(--paper-dim); }
-  .showcase-copy li svg { width: 16px; height: 16px; flex: none; margin-top: 5px; color: var(--cinnabar); }
+  .shot-cap { margin-top: 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--text-dim); }
+  .showcase-copy h3 { font-family: var(--display); font-size: clamp(20px, 2.4vw, 28px); line-height: 1.3; margin-bottom: 18px; }
+  .showcase-copy ul { list-style: none; display: grid; gap: 13px; }
+  .showcase-copy li { display: flex; gap: 11px; font-size: 13.5px; color: var(--text-dim); font-weight: 300; }
+  .showcase-copy li svg { width: 15px; height: 15px; flex: none; margin-top: 4px; color: var(--yellow); }
 
-  /* ── 安装流程 ───────────────────────────────────────────── */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border-block: 1px solid var(--rule); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 780px) { .steps { grid-template-columns: 1fr; } }
-  .step { background: var(--ink); padding: 36px 30px; }
-  .step b {
-    display: block; font-family: var(--serif); font-size: 44px; font-weight: 900;
-    color: transparent; -webkit-text-stroke: 1px var(--bronze); opacity: .5; line-height: 1; margin-bottom: 18px;
-  }
-  .step h4 { font-family: var(--serif); font-size: 17px; font-weight: 600; letter-spacing: .05em; margin-bottom: 8px; }
-  .step p { font-size: 13.5px; color: var(--paper-dim); }
+  .step { background: var(--panel); border: 1px solid var(--line); padding: 28px 26px; }
+  .step b { font-family: var(--display); font-size: 38px; line-height: 1; color: var(--yellow); display: block; margin-bottom: 14px; }
+  .step h4 { font-size: 15.5px; font-weight: 700; letter-spacing: .02em; margin-bottom: 7px; }
+  .step p { font-size: 13px; color: var(--text-dim); font-weight: 300; }
 
-  /* ── 下载 ───────────────────────────────────────────────── */
-  .download {
-    position: relative; overflow: hidden;
-    background: var(--ink-2); border-top: 1px solid var(--rule);
-  }
+  .download { position: relative; overflow: hidden; background: var(--bg-2); border-block: 1px solid var(--line); }
   .download::before {
     content: ''; position: absolute; inset: 0;
-    background: url('assets/hero-landscape.jpg') center 62% / cover no-repeat;
-    opacity: .13; filter: grayscale(.5);
+    background: url('assets/hero-landscape.jpg') center 60% / cover no-repeat;
+    opacity: .07;
   }
   .download .wrap { position: relative; z-index: 1; text-align: center; }
-  .download h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(30px, 4.6vw, 54px); letter-spacing: .04em; margin-bottom: 16px; }
-  .download p { color: var(--paper-dim); max-width: 44ch; margin: 0 auto 38px; font-size: 15px; }
+  .download h2 { font-family: var(--display); font-size: clamp(28px, 4.2vw, 50px); line-height: 1.15; margin-bottom: 14px; }
+  .download h2 span { color: var(--yellow); }
+  .download .wrap > p { color: var(--text-dim); max-width: 42ch; margin: 0 auto 34px; font-size: 14.5px; font-weight: 300; }
   .dl-card {
-    display: inline-flex; flex-direction: column; align-items: stretch; gap: 0;
-    border: 1px solid var(--rule); background: rgba(20,16,12,.72); backdrop-filter: blur(8px);
-    min-width: min(420px, 100%);
+    display: inline-flex; flex-direction: column; text-align: left;
+    border: 1px solid var(--line); background: rgba(14,20,24,.82); backdrop-filter: blur(10px);
+    min-width: min(430px, 100%);
   }
-  .dl-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 22px; border-bottom: 1px solid var(--rule); font-size: 13px; }
-  .dl-row:last-child { border-bottom: 0; }
-  .dl-row span { color: var(--paper-dim); }
+  .dl-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .dl-row span { color: var(--text-dim); }
   .dl-row b { font-family: var(--mono); font-weight: 500; letter-spacing: .04em; }
-  .dl-btn { display: block; padding: 20px; background: var(--cinnabar); color: #FFF6F2; font-weight: 500; font-size: 15.5px; letter-spacing: .04em; transition: background .25s var(--ease); }
-  .dl-btn:hover { background: var(--cinnabar-2); }
-  .dl-note { margin-top: 18px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--paper-dim); }
+  .dl-btn {
+    display: block; padding: 19px; text-align: center;
+    background: var(--yellow); color: #0E1418; font-weight: 700; font-size: 15px;
+    transition: background .22s var(--ease);
+  }
+  .dl-btn:hover { background: #FFE04A; }
+  .dl-note { margin-top: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--text-dim); }
 
-  /* ── 页脚 ───────────────────────────────────────────────── */
-  footer { border-top: 1px solid var(--rule); padding: 40px var(--pad); }
-  .foot { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--paper-dim); }
-  .foot a:hover { color: var(--paper); }
-  .foot-links { display: flex; gap: 26px; flex-wrap: wrap; }
+  footer { border-top: 1px solid var(--line); padding: 34px var(--pad); }
+  .foot { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
+  .foot a:hover { color: var(--yellow); }
+  .foot-links { display: flex; gap: 24px; flex-wrap: wrap; }
 
-  /* 入场：只做一次，避免「每个区块都淡入上滑」的模板感。
-     只在 JS 可用时隐藏（.js 由 head 里的内联脚本打上），
-     否则脚本失败会让整页内容永远不可见。 */
-  .js .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+  /* 入场：仅 JS 可用时隐藏；?static=1 或脚本失败时内容照常可见 */
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
   .js .reveal.in { opacity: 1; transform: none; }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
     .hero h1 .line > span { transform: none; }
     .hero p.lede, .actions, .hero-meta { opacity: 1; }
     .js .reveal { opacity: 1; transform: none; }
@@ -303,34 +252,34 @@
 </head>
 <body>
 
+<script>
+  if (!new URLSearchParams(location.search).has('static')) {
+    document.documentElement.classList.add('js')
+  }
+</script>
+
 <header id="header">
   <a class="brand" href="#top">
-    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M16 2.5 27 8v9.2c0 6.1-4.4 10.6-11 12.3C9.4 27.8 5 23.3 5 17.2V8L16 2.5Z" stroke="#A8863C" stroke-width="1.4"/>
-      <path d="M16 9.2c2.4 2.6 3.6 4.6 3.6 6.4 0 2-1.6 3.5-3.6 3.5s-3.6-1.5-3.6-3.5c0-1.8 1.2-3.8 3.6-6.4Z" fill="#C8412C"/>
-      <path d="M16 19.2v3.4" stroke="#A8863C" stroke-width="1.3" stroke-linecap="round"/>
-    </svg>
-    <span>
-      <span class="brand-name">烽沙</span><br>
-      <span class="brand-sub">MOD MANAGER</span>
+    <span class="brand-mark">烽</span>
+    <span class="brand-text">
+      <b>烽沙</b>
+      <span>MOD WORKSHOP</span>
     </span>
   </a>
   <nav>
     <a href="#features">功能</a>
     <a href="#look">界面</a>
     <a href="#install">安装</a>
-    <a class="hide-sm" href="https://aaszxx2.github.io/fengsha-mod-manager/" target="_blank" rel="noopener">在线工坊</a>
     <a href="#download">下载</a>
   </nav>
 </header>
 
 <main id="top">
 
-  <!-- Hero -->
   <section class="hero">
     <div class="hero-bg" id="heroBg"></div>
     <div class="hero-inner">
-      <span class="eyebrow">FENGSHA · MOD WORKSHOP</span>
+      <span class="tag">FENGSHA · MOD WORKSHOP</span>
       <h1>
         <span class="line"><span>把模组装进游戏，</span></span>
         <span class="line"><span>只需要<em>一次</em>点击</span></span>
@@ -341,86 +290,80 @@
       </p>
       <div class="actions">
         <a class="btn btn-primary" href="#download">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
           下载 Windows 版
         </a>
         <a class="btn btn-ghost" href="https://aaszxx2.github.io/fengsha-mod-manager/" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           先看看工坊
         </a>
       </div>
       <div class="hero-meta">
-        <span><i></i>Windows 10 / 11</span>
-        <span><i></i>约 96 MB</span>
-        <span><i></i>v0.3.3</span>
-        <span><i></i>支持中文模组名</span>
+        <span>WINDOWS 10 / 11</span>
+        <span>约 96 MB</span>
+        <span>v0.3.3</span>
+        <span>支持中文模组名</span>
       </div>
     </div>
-    <div class="scroll-cue" aria-hidden="true">向下<span></span></div>
+    <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
   </section>
 
-  <!-- 功能 -->
   <section id="features">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">壹 / 功能</span>
-        <h2 class="sec-title">四道军令，各司其职</h2>
-        <p class="sec-desc">装模组这件事本来不该这么麻烦。我们把容易出错的环节都收进工具里，你只需要选文件。</p>
+        <span class="sec-num">01 / FEATURES</span>
+        <h2 class="sec-title">四件事，工具替你做完</h2>
+        <p class="sec-desc">装模组本来不该这么麻烦。容易出错的环节都收进工具里，你只需要选文件。</p>
       </div>
-      <div class="orders reveal">
-        <article class="order">
-          <span class="order-num">令 · 一</span>
+      <div class="grid reveal">
+        <article class="card">
+          <span class="card-num">01</span>
           <h3>一键安装</h3>
           <p>选好 ZIP，剩下的交给它。中文名、空格、多余的顶层文件夹都会自动处理，装完自动登记到 mods.txt。</p>
-          <span class="seal">令</span>
         </article>
-        <article class="order">
-          <span class="order-num">令 · 二</span>
+        <article class="card">
+          <span class="card-num">02</span>
           <h3>云端工坊</h3>
           <p>看到喜欢的作品，点一下就能装进游戏。不用再下载、解压、拖进目录，安装过程带进度和校验。</p>
-          <span class="seal">令</span>
         </article>
-        <article class="order">
-          <span class="order-num">令 · 三</span>
+        <article class="card">
+          <span class="card-num">03</span>
           <h3>前置识别</h3>
           <p>自动分辨 UE4SS 本体、Lua 模组和 PAK 资源，各归各位。前置包装到该去的地方，不再堆在 Mods 里。</p>
-          <span class="seal">令</span>
         </article>
-        <article class="order">
-          <span class="order-num">令 · 四</span>
+        <article class="card">
+          <span class="card-num">04</span>
           <h3>装完自检</h3>
           <p>缺 main.lua、多套一层目录、前置不完整——这些问题装完当场告诉你，不用进游戏才发现没生效。</p>
-          <span class="seal">令</span>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- 界面 -->
-  <section id="look" style="background: var(--ink-2); border-block: 1px solid var(--rule);">
+  <section id="look" style="background: var(--bg-2); border-block: 1px solid var(--line);">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">贰 / 界面</span>
+        <span class="sec-num">02 / INTERFACE</span>
         <h2 class="sec-title">所有模组，一屏看清</h2>
       </div>
       <div class="showcase">
         <div class="reveal">
           <div class="shot"><img src="assets/ui-list.jpg" alt="烽沙 MOD 管理器本地管理界面，列出已安装的模组及其启用状态"></div>
-          <p class="shot-caption">本地管理 · 模组列表与启用状态</p>
+          <p class="shot-cap">LOCAL MANAGER · 模组列表与启用状态</p>
         </div>
         <div class="showcase-copy reveal">
           <h3>该看到的都在，<br>不该操心的都不在</h3>
           <ul>
             <li>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
               <span>启用、停用、排序、删除，都是点一下的事，改之前自动备份 mods.txt</span>
             </li>
             <li>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
               <span>UE4SS 前置状态和版本单独显示，不用在列表里找它——它本来就不是模组</span>
             </li>
             <li>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
               <span>缺少入口文件的模组会被标出来，并直接告诉你该找作者</span>
             </li>
           </ul>
@@ -429,37 +372,35 @@
     </div>
   </section>
 
-  <!-- 安装 -->
   <section id="install">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">叁 / 上手</span>
+        <span class="sec-num">03 / GET STARTED</span>
         <h2 class="sec-title">三步，从下载到能用</h2>
       </div>
-    </div>
-    <div class="steps reveal">
-      <div class="step">
-        <b>01</b>
-        <h4>下载并安装</h4>
-        <p>双击安装包，可以自己选安装位置，会自动创建桌面和开始菜单快捷方式。</p>
-      </div>
-      <div class="step">
-        <b>02</b>
-        <h4>选择游戏目录</h4>
-        <p>选中烽沙的安装目录即可，工具会自动识别；Steam 用户也能一键扫描库。</p>
-      </div>
-      <div class="step">
-        <b>03</b>
-        <h4>装模组</h4>
-        <p>从工坊下载，或把 ZIP 拖进来。装完会告诉你这个模组能不能被游戏加载。</p>
+      <div class="steps reveal">
+        <div class="step">
+          <b>01</b>
+          <h4>下载并安装</h4>
+          <p>双击安装包，可以自己选安装位置，会自动创建桌面和开始菜单快捷方式。</p>
+        </div>
+        <div class="step">
+          <b>02</b>
+          <h4>选择游戏目录</h4>
+          <p>选中烽沙的安装目录即可，工具会自动识别；Steam 用户也能一键扫描库。</p>
+        </div>
+        <div class="step">
+          <b>03</b>
+          <h4>装模组</h4>
+          <p>从工坊下载，或把 ZIP 拖进来。装完会告诉你这个模组能不能被游戏加载。</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- 下载 -->
   <section id="download" class="download">
     <div class="wrap">
-      <h2>装好，开局。</h2>
+      <h2>装好，<span>开局</span>。</h2>
       <p>下载安装包，双击安装。已经装过旧版本的话，打开工具会自动提示更新。</p>
       <div class="dl-card">
         <div class="dl-row"><span>版本</span><b>v0.3.3</b></div>
@@ -469,7 +410,7 @@
           下载 Fengsha-Mod-Manager-Setup.exe
         </a>
       </div>
-      <p class="dl-note">安装包托管在 GitHub Releases · 下载页：aaszxx2.github.io/fengsha-mod-manager</p>
+      <p class="dl-note">INSTALLER HOSTED ON GITHUB RELEASES · aaszxx2.github.io/fengsha-mod-manager</p>
     </div>
   </section>
 
@@ -492,19 +433,16 @@
   var heroBg = document.getElementById('heroBg');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // 顶栏背景：滚过首屏才出现
   function onScroll() {
     header.classList.toggle('scrolled', window.scrollY > 40);
     if (!reduce && heroBg) {
-      // 极轻的视差：只在首屏范围内，避免长距离位移导致图片边缘露白
       var y = Math.min(window.scrollY, window.innerHeight);
-      heroBg.style.transform = 'translate3d(0,' + (y * 0.18) + 'px,0)';
+      heroBg.style.transform = 'translate3d(0,' + (y * 0.16) + 'px,0)';
     }
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  // 入场：只触发一次，之后取消观察
   var items = document.querySelectorAll('.reveal');
   if (!('IntersectionObserver' in window) || reduce) {
     items.forEach(function (el) { el.classList.add('in'); });
