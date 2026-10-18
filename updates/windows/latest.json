@@ -1,11 +1,12 @@
 {
-  "version": "0.3.1",
-  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.1/app-ba23e4c738ffe965.zip",
-  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.1/Fengsha-Mod-Manager-Setup.exe",
-  "size": 6084120,
-  "sha256": "ba23e4c738ffe9654fb4223227dd8b9185dad45194f34d2a3ddf1efb7cfe439d",
+  "version": "0.3.3",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.3/app-bd4367c8d16dc947.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.3/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6086466,
+  "sha256": "bd4367c8d16dc9479b49003908082d09f6f2800151370a43598f50f499a17f9a",
   "releaseNotes": [
-    "修复：部分玩家点「检查更新」提示「更新服务暂不可用」。现在更新检查有两个线路，一条连不上会自动换另一条",
-    "顺带把更新失败的提示改得更明确，不再让人以为是服务挂了"
+    "新增：本地管理界面显示 UE4SS 前置状态和版本号。前置是加载器，本来就不会出现在模组列表里，现在一眼能确认它在不在",
+    "新增：上传模组时按类型检查压缩包结构，缺 Scripts/main.lua 这类问题会直接拦住并说明原因，避免玩家装上不生效",
+    "本地列表会标出缺少 Scripts/main.lua 的模组，并提示联系作者"
   ]
 }
