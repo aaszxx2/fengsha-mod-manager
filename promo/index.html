@@ -231,6 +231,8 @@
   }
   .dl-btn:hover { background: #FFE04A; }
   .dl-note { margin-top: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--text-dim); }
+  .dl-note .mirror { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); transition: color .2s var(--ease), text-decoration-color .2s; }
+  .dl-note .mirror:hover { color: var(--yellow); text-decoration-color: var(--yellow); }
 
   footer { border-top: 1px solid var(--line); padding: 34px var(--pad); }
   .foot { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
@@ -410,7 +412,7 @@
           下载 Fengsha-Mod-Manager-Setup.exe
         </a>
       </div>
-      <p class="dl-note">INSTALLER HOSTED ON GITHUB RELEASES · aaszxx2.github.io/fengsha-mod-manager</p>
+      <p class="dl-note">INSTALLER HOSTED ON GITHUB RELEASES · <a class="mirror" href="https://gh-proxy.com/https://github.com/aaszxx2/fengsha-mod-manager/releases/latest/download/Fengsha-Mod-Manager-Setup.exe" target="_blank" rel="noopener" title="第三方加速通道，文件来自 GitHub 官方发布">国内下载慢？用加速通道</a></p>
     </div>
   </section>
 
