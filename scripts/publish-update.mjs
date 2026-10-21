@@ -17,7 +17,7 @@
 // 这个 key 只能存在于本机环境变量或 CI secret 中，绝不能写进前端代码或提交进仓库。
 
 import { createHash } from 'node:crypto'
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -110,6 +110,12 @@ if (!dryRun) {
   } catch (error) {
     console.warn(`  ⚠️ 安装包地址检查失败：${error.message}`)
   }
+}
+
+// 把最终清单（含安装包哈希）写回本地：站点镜像和源码提交都以这份为准。
+// 之前只上传不写回，导致站点上的镜像清单缺少 installerSha256。
+if (!dryRun) {
+  await writeFile(path.join(root, 'public', 'updates', 'windows', 'latest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 }
 
 const runtimeConfig = {
