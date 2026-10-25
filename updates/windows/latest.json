@@ -1,13 +1,14 @@
 {
-  "version": "0.3.4",
-  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.4/app-6782aaefb2d0e943.zip",
-  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.4/Fengsha-Mod-Manager-Setup.exe",
-  "size": 6755417,
-  "sha256": "6782aaefb2d0e9436397a964fbb6736222cb007dc67fb881e8fdc72962232723",
+  "version": "0.3.5",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.5/app-dd31ca193c58d27a.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.5/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6755518,
+  "sha256": "dd31ca193c58d27a0f12cc00a7455fcc7b1ce74253687b7eee4c60e89d74ca5b",
   "releaseNotes": [
-    "安全：自动更新下载安装包后会校验 SHA-256，和清单里的哈希比对一致才允许安装，防止下载链路被替换",
-    "顺带把更新清单的格式校验补严了"
+    "工坊卡片重做：封面改为大图，卡片里能直接看到分类、版本、作者、下载量和下载按钮",
+    "卡片改成自适应网格，间距放宽，不再挤成一条条细栏",
+    "修复卡片内容溢出、压到下一行的问题"
   ],
-  "installerSha256": "ec53dc8ca5611b213b9d41485b18f90ff9d88c361e777df0df21c92d0c380c36",
-  "installerSize": 101236920
+  "installerSha256": "8d3383ef26d7f52eeab4f58f1d95f9a6526595ad9867e7771d4f96fe4dc471c9",
+  "installerSize": 101237016
 }
