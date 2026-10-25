@@ -1,14 +1,13 @@
 {
-  "version": "0.3.5",
-  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.5/app-dd31ca193c58d27a.zip",
-  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.5/Fengsha-Mod-Manager-Setup.exe",
-  "size": 6755518,
-  "sha256": "dd31ca193c58d27a0f12cc00a7455fcc7b1ce74253687b7eee4c60e89d74ca5b",
+  "version": "0.3.6",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.6/app-a56b2e4962f3e632.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.6/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6755814,
+  "sha256": "a56b2e4962f3e632101c9a03449bb735ce70976c73f40cecbb0a5ed36bf09b28",
   "releaseNotes": [
-    "工坊卡片重做：封面改为大图，卡片里能直接看到分类、版本、作者、下载量和下载按钮",
-    "卡片改成自适应网格，间距放宽，不再挤成一条条细栏",
-    "修复卡片内容溢出、压到下一行的问题"
+    "工坊卡片新增状态角标：已安装的作品显示绿色「已安装」，下载过但没装（或已删除）的显示「已下载」",
+    "「已安装」以游戏目录里的实际文件为准，在本地管理删掉模组后角标会自动消失"
   ],
-  "installerSha256": "8d3383ef26d7f52eeab4f58f1d95f9a6526595ad9867e7771d4f96fe4dc471c9",
-  "installerSize": 101237016
+  "installerSha256": "9787bceae42c3e8ca7c24f09baa2ebf5eda9d65633a3cda1f06f6f17efafa84f",
+  "installerSize": 101237286
 }
