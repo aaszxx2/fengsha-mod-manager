@@ -532,6 +532,43 @@ function classifyZipEntries(entries) {
   return { type: 'ue4ss', folder: sharedFolder }
 }
 
+// 拖入 / 下载的 ZIP 在解压之前先判定「装了能不能用」。判定标准与游戏加载行为一致：
+// UE4SS 只认带 Scripts/main.lua 的文件夹，PAK 必须有 .pak（IoStore 还要 .ucas/.utoc 配套）。
+// 不合格就地拦下，不给玩家「装上了但不生效」的假成功。
+async function precheckZipArchive(archive) {
+  let entries
+  try {
+    entries = await zip.list(archive)
+  } catch {
+    return { ok: false, issues: ['压缩包无法读取，文件可能已损坏或不是标准 ZIP'] }
+  }
+  if (!entries.length) return { ok: false, issues: ['压缩包是空的'] }
+  const kind = classifyZipEntries(entries)
+  const lower = entries.map(name => name.toLowerCase())
+  if (kind.type === 'runtime') return { ok: true, type: 'runtime', label: 'UE4SS 前置包' }
+  if (kind.type === 'pak') {
+    if (!lower.some(name => name.endsWith('.pak'))) return { ok: false, issues: ['只有 .ucas / .utoc 而没有 .pak 文件，游戏加载不到任何资源'] }
+    if (kind.pakType === 'IoStore') {
+      const hasUcas = lower.some(name => name.endsWith('.ucas'))
+      const hasUtoc = lower.some(name => name.endsWith('.utoc'))
+      if (!hasUcas || !hasUtoc) return { ok: false, issues: ['IoStore 模组必须同时包含同名 .pak、.ucas、.utoc 三个文件，这个包不完整'] }
+    }
+    return { ok: true, type: 'pak', pakType: kind.pakType, label: `${kind.pakType === 'IoStore' ? 'IoStore' : 'LogicMods'} PAK 模组` }
+  }
+  const hasMainLua = lower.some(name => name.endsWith('scripts/main.lua'))
+  if (!hasMainLua) {
+    const hasScripts = lower.some(name => /(^|\/)scripts\//.test(name))
+    return { ok: false, issues: [hasScripts
+      ? '缺少 Scripts/main.lua 入口文件——UE4SS 只加载带 main.lua 的模组，装了也不会生效，请联系模组作者补上'
+      : '没有找到可识别的模组结构（UE4SS 需要 Scripts/main.lua，PAK 需要 .pak 文件），这个包不是可安装的模组'] }
+  }
+  if (kind.folder) {
+    const cleaned = sanitizeModName(kind.folder)
+    if (!isValidModName(cleaned)) return { ok: false, issues: [`ZIP 顶层文件夹名「${kind.folder}」不合法（只能包含中文、字母、数字、下划线、点和短横线）`] }
+  }
+  return { ok: true, type: 'ue4ss', label: 'UE4SS Lua 模组' }
+}
+
 // UE4SS 本体（前置包）不是模组：它要覆盖的是 <Win64>/ue4ss 目录本身，
 // 而代理 DLL（dwmapi.dll 等）必须落在 <Win64> 下游戏才会加载 UE4SS。
 // 这里只做「合并覆盖」—— 同名文件先备份再替换，绝不删除 Mods 或其它既有内容。
@@ -647,18 +684,28 @@ async function inspectInstalledMod(root, name) {
 }
 
 async function installWork(root, options, onProgress) {
-  const { url, title = '', modId = '', version = '', dependencies = '', overwrite = false } = options || {}
-  if (!url) throw new Error('缺少下载地址')
+  const { url, localPath = '', title = '', modId = '', version = '', dependencies = '', overwrite = false } = options || {}
+  if (!url && !localPath) throw new Error('缺少下载地址')
   if (!(await inspectGame(root)).gameExe) throw new Error('所选目录未检测到烽沙游戏，请重新选择游戏目录。')
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const workspace = path.join(managerDataDir(root), 'staging', `work-${process.pid}-${stamp}`)
-  const archive = path.join(managerDataDir(root), 'downloads', `${(modId || stamp).replace(/[^\w.-]/g, '_')}.zip`)
+  // localPath：玩家拖入 / 手动选择的本地 ZIP。直接用原文件，装完绝不删除。
+  const archive = localPath || path.join(managerDataDir(root), 'downloads', `${(modId || stamp).replace(/[^\w.-]/g, '_')}.zip`)
   const staging = path.join(workspace, 'payload')
   try {
-    if (onProgress) onProgress({ phase: 'downloading', percent: 0 })
-    await downloadToFile(url, archive, (received, total) => {
-      if (onProgress) onProgress({ phase: 'downloading', percent: total ? Math.min(99, Math.round((received / total) * 100)) : 0, received, total })
-    })
+    if (onProgress) onProgress({ phase: localPath ? 'inspecting' : 'downloading', percent: 0 })
+    if (localPath) {
+      // 拖入的 ZIP 先预检：不合格就地拦下，不解压、不写入游戏目录
+      const precheck = await precheckZipArchive(archive)
+      if (!precheck.ok) return { ok: false, rejected: true, error: precheck.issues[0], issues: precheck.issues }
+    } else {
+      await downloadToFile(url, archive, (received, total) => {
+        if (onProgress) onProgress({ phase: 'downloading', percent: total ? Math.min(99, Math.round((received / total) * 100)) : 0, received, total })
+      })
+      // 工坊下载的包同样预检，挡住漏审的坏包
+      const precheck = await precheckZipArchive(archive)
+      if (!precheck.ok) return { ok: false, rejected: true, error: precheck.issues[0], issues: precheck.issues }
+    }
     if (onProgress) onProgress({ phase: 'inspecting', percent: 0 })
     const entries = await zip.list(archive)
     if (!entries.length) throw new Error('压缩包是空的')
@@ -700,7 +747,8 @@ async function installWork(root, options, onProgress) {
     return { ok: true, kind: 'ue4ss', name: folder, check }
   } finally {
     await fs.rm(workspace, { recursive: true, force: true }).catch(() => {})
-    await fs.rm(archive, { force: true }).catch(() => {})
+    // localPath 是玩家自己的 ZIP 原件，只读使用，绝不删除
+    if (!localPath) await fs.rm(archive, { force: true }).catch(() => {})
   }
 }
 
@@ -755,6 +803,70 @@ ipcMain.handle('choose-directory', chooseDirectory)
 ipcMain.handle('detect-game', detectGame)
 ipcMain.handle('inspect-game', (_event, root) => inspectGame(root))
 ipcMain.handle('scan-mods', (_event, root) => scanMods(root))
+function agentOrigin(value) {
+  const url = new URL(String(value || 'http://127.0.0.1:3000'))
+  if (url.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.username || url.password || url.search || url.hash || !['', '/'].includes(url.pathname)) throw new Error('Agent API 仅允许连接本机地址（localhost、127.0.0.1 或 ::1）')
+  return url.origin
+}
+const validAgentModel = model => typeof model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(model)
+const agentTools = [{ type: 'function', function: { name: 'inspect_local_mod_setup', description: '只读检查用户选定的烽沙游戏目录、UE4SS 加载器和当前 UE4SS/PAK 模组状态。不要把它当作游戏内生效验证。', parameters: { type: 'object', properties: {}, additionalProperties: false } } }]
+async function agentRequest(origin, pathname, init = {}) {
+  const response = await fetch(`${origin}${pathname}`, { ...init, signal: AbortSignal.timeout(60000) })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const detail = String(body?.error?.message || '')
+    if (/\b418\b/.test(detail)) throw new Error('Duck.ai 上游拒绝了请求（HTTP 418）。本机服务已连接，但目前无法获得模型回复。')
+    if (response.status === 429 || /rate limit|\b429\b/i.test(detail)) throw new Error('AI 服务请求过于频繁，请稍后重试。')
+    throw new Error(`本机 Agent API 返回 HTTP ${response.status}`)
+  }
+  return response.json()
+}
+ipcMain.handle('agent-check', async (_event, value) => {
+  const origin = agentOrigin(value)
+  const models = await agentRequest(origin, '/v1/models')
+  const available = Array.isArray(models.data) ? [...new Set(models.data.map(item => item?.id).filter(validAgentModel))].slice(0, 100) : []
+  if (!available.length) throw new Error('本机 AI 服务没有返回可用的模型列表。')
+  return { online: true, models: available }
+})
+ipcMain.handle('agent-chat', async (_event, value, model, messages, gameRoot) => {
+  const origin = agentOrigin(value)
+  if (!validAgentModel(model)) throw new Error('模型名称无效，请重新选择')
+  if (!Array.isArray(messages) || !messages.length || messages.length > 12) throw new Error('对话内容无效或过长')
+  const safeMessages = messages.map(message => {
+    if (!message || !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string' || message.content.length > 2000) throw new Error('对话内容无效')
+    return { role: message.role, content: message.content }
+  })
+  const root = typeof gameRoot === 'string' && path.isAbsolute(gameRoot) ? gameRoot : ''
+  const messagesWithPolicy = [{ role: 'system', content: '你是烽沙 MOD 管理器内的只读诊断助手。可调用的工具只会读取用户当前选择的本机游戏目录。不得声称已经执行安装、启用、排序、修改或启动操作；不得把本机诊断当作游戏内生效证明。PAK 与 UE4SS 是不同模组形式，分析时应区分。回答中文、简洁并依据工具数据；缺少数据就明确说明。' }, ...safeMessages]
+  for (let round = 0; round < 3; round++) {
+    const result = await agentRequest(origin, '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer dummy-key' }, body: JSON.stringify({ model, messages: messagesWithPolicy, tools: root ? agentTools : undefined, tool_choice: root ? 'auto' : undefined }) })
+    const message = result.choices?.[0]?.message
+    if (!message) throw new Error('Agent API 返回了无法识别的响应')
+    const calls = Array.isArray(message.tool_calls) ? message.tool_calls : []
+    if (!calls.length) {
+      if (typeof message.content !== 'string' || !message.content.trim()) throw new Error('模型没有返回文字内容，请稍后重试。')
+      return message.content.slice(0, 6000)
+    }
+    if (calls.length > 3 || calls.some(call => !call.id || call.function?.name !== 'inspect_local_mod_setup')) throw new Error('模型请求了无效或过多的工具调用，已拒绝执行')
+    messagesWithPolicy.push({ role: 'assistant', content: message.content || '', tool_calls: calls })
+    for (const call of calls) {
+      const info = await inspectGame(root)
+      if (!info.gameExe) {
+        messagesWithPolicy.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify({ gameFound: false, message: '没有在当前选择目录找到烽沙游戏主程序。' }) })
+        continue
+      }
+      const base = modsPath(root)
+      const rawText = await fs.readFile(path.join(base, 'mods.txt'), 'utf8').catch(error => error.code === 'ENOENT' ? '' : Promise.reject(error))
+      const states = new Map([...rawText.matchAll(/^\s*([^\r\n:#]+?)\s*:\s*([01])/gm)].map(match => [match[1].trim().toLowerCase(), match[2] === '1']))
+      const ue4ss = (await readDirectoryEntries(base)).filter(entry => entry.isDirectory() && !blockedModNames.includes(entry.name.toLowerCase())).slice(0, 100).map(entry => ({ name: entry.name, enabled: states.get(entry.name.toLowerCase()) ?? false }))
+      const pakRoot = paksPath(root)
+      const pak = {}
+      for (const [type, folder] of Object.entries(pakKinds)) pak[type] = (await readDirectoryEntries(path.join(pakRoot, folder))).filter(entry => entry.isFile() && entry.name.toLowerCase().endsWith('.pak')).slice(0, 100).map(entry => entry.name)
+      messagesWithPolicy.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify({ gameFound: info.gameExe, ue4ssReady: info.ue4ssReady, ue4ssVersion: info.ue4ssVersion, modsManifestFound: info.modsReady, pakLoaderLogSeen: info.pakLoaderLogSeen, ue4ssMods: ue4ss, pakMods: pak }) })
+    }
+  }
+  throw new Error('Agent 工具调用次数超限，请缩小问题后重试。')
+})
 ipcMain.handle('inspect-mod-source', (_event, root, source) => inspectModSource(root, source))
 ipcMain.handle('write-mods', (_event, root, states) => writeModsFile(root, states))
 ipcMain.handle('set-pak-enabled', (_event, root, type, name, enabled) => setPakEnabled(root, type, name, enabled))
