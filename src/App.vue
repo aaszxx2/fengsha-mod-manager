@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { ArrowDownWideNarrow, ArrowDown, ArrowLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronRight, CircleAlert, CircleUserRound, Clipboard, CloudDownload, CloudOff, Download, FileArchive, Folder, FolderOpen, Gamepad2, Grid2X2, GripVertical, HardDrive, Heart, List, ListOrdered, LoaderCircle, Lock, LogOut, Mail, MessageCircle, Package, Pin, PinOff, Plus, RefreshCw, Search, Settings, Share2, ShieldCheck, Star, Trash2, Unlock, Upload, Wallet, Wrench, X } from 'lucide-vue-next'
+import { ArrowDownWideNarrow, ArrowDown, ArrowLeft, ArrowUp, BookOpen, Bot, Check, ChevronDown, ChevronRight, CircleAlert, CircleUserRound, Clipboard, CloudDownload, CloudOff, Download, FileArchive, Folder, FolderOpen, Gamepad2, Grid2X2, GripVertical, HardDrive, Heart, List, ListOrdered, LoaderCircle, Lock, LogOut, Mail, MessageCircle, Package, Pin, PinOff, Plus, RefreshCw, Search, Send, Settings, Share2, ShieldCheck, Star, Trash2, Unlock, Upload, Wallet, Wrench, X } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
 
 const GAME_PARTS = ['MOProject', 'Binaries', 'Win64', 'ue4ss', 'Mods']
@@ -12,6 +12,15 @@ const categoryFilter = ref('全部分类')
 const sort = ref('加载顺序')
 const view = ref('list')
 const activeTab = ref('本地管理')
+const agentOrigin = ref(localStorage.getItem('fengsha-agent-origin') || 'http://127.0.0.1:3000')
+const agentModel = ref(localStorage.getItem('fengsha-agent-model') || 'gpt-4o-mini')
+const agentOnline = ref(false)
+const agentAnswered = ref(false)
+const agentModelsFound = ref([])
+const agentBusy = ref(false)
+const agentError = ref('')
+const agentDraft = ref('')
+const agentMessages = ref([{ role: 'assistant', content: '你好，我是烽沙 MOD 诊断助手。连接本机 DuckAI 后，我可以结合已选择的游戏目录检查 UE4SS、PAK 与模组状态。' }])
 const rootName = ref(localStorage.getItem('fengsha-game-name') || '尚未选择游戏目录')
 const pathHint = ref(localStorage.getItem('fengsha-game-path') || '')
 const gameReady = ref(false)
@@ -260,6 +269,42 @@ const emptyState = computed(() => {
 function log(message, type = 'info') {
   logs.value.unshift({ time: new Date().toLocaleTimeString('zh-CN', { hour12: false }), message, type })
   logs.value = logs.value.slice(0, 80)
+}
+
+async function checkAgent() {
+  agentError.value = ''
+  agentOnline.value = false
+  agentAnswered.value = false
+  agentModelsFound.value = []
+  if (!window.fengshaDesktop?.checkAgent) { agentError.value = 'AI 军师仅在桌面版可连接本机 API。'; return }
+  try {
+    localStorage.setItem('fengsha-agent-origin', agentOrigin.value.trim())
+    const result = await window.fengshaDesktop.checkAgent(agentOrigin.value.trim())
+    agentModelsFound.value = result.models || []
+    agentOnline.value = true
+    if (agentModelsFound.value.length && !agentModelsFound.value.includes(agentModel.value)) agentModel.value = agentModelsFound.value.find(model => ['gpt-4o-mini', 'gpt-5-mini'].includes(model)) || agentModelsFound.value[0]
+  } catch (error) { agentError.value = error.message || '连接本机 AI 服务失败。' }
+}
+
+async function sendAgentMessage() {
+  const content = agentDraft.value.trim()
+  if (!content || agentBusy.value) return
+  if (!window.fengshaDesktop?.chatWithAgent) { agentError.value = '请使用桌面版，并在本机启动 DuckAI 服务。'; return }
+  agentMessages.value.push({ role: 'user', content })
+  agentDraft.value = ''
+  agentBusy.value = true
+  agentError.value = ''
+  agentAnswered.value = false
+  try {
+    localStorage.setItem('fengsha-agent-origin', agentOrigin.value.trim())
+    localStorage.setItem('fengsha-agent-model', agentModel.value)
+    const history = agentMessages.value.slice(-10).map(({ role, content: text }) => ({ role, content: text.slice(0, 2000) }))
+    const answer = await window.fengshaDesktop.chatWithAgent(agentOrigin.value.trim(), agentModel.value, history, localStorage.getItem('fengsha-game-root') || '')
+    agentMessages.value.push({ role: 'assistant', content: answer })
+    agentOnline.value = true
+    agentAnswered.value = true
+  } catch (error) { agentError.value = error.message || 'Agent 请求失败。' }
+  finally { agentBusy.value = false }
 }
 
 // 轻提示：复制这类操作原来只在底部日志写一行，界面毫无反馈，用户以为按钮坏了。
@@ -919,6 +964,14 @@ async function downloadWork(work) {
         dependencies: work.dependencies || '',
         overwrite: true
       })
+      // 预检不合格的包直接拦下：讲清楚为什么不能用，也不再转普通下载——
+      // 装不上的包下载了也只是占硬盘
+      if (result?.rejected) {
+        installProgress.value = null
+        log(`「${work.title}」无法安装：${result.error}`, 'error')
+        showToast(`「${work.title}」不是可用的模组包：${result.error}`, 'error')
+        return
+      }
       if (!result?.ok) throw new Error(result?.error || '安装未完成')
       // 前置包装到的是 ue4ss 目录、不是 Mods，所以不能提示"本地列表已刷新"——它不会出现在列表里
       if (result.kind === 'runtime') {
@@ -1758,6 +1811,84 @@ async function copyDirectory(source, target) {
   }
 }
 
+// ── 拖入 ZIP 自动安装 ─────────────────────────────────────────────
+// 桌面版：把 ZIP 拖到本地管理列表上，后端先判定「装了能不能用」，
+// 不合格当场拦下并说明原因；合格直接安装，装完自动排入 mods.txt 加载顺序（默认启用）。
+// 浏览器版拿不到文件的真实路径、也碰不到游戏目录，只能提示用桌面版。
+const zipDragOver = ref(false)
+
+function onModListDragOver(event) {
+  if (!window.fengshaDesktop || !event.dataTransfer) return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'copy'
+  zipDragOver.value = true
+}
+
+async function onModListDrop(event) {
+  event.preventDefault()
+  zipDragOver.value = false
+  const files = [...(event.dataTransfer?.files || [])]
+  if (!files.length) return
+  const zips = files.filter(file => /\.zip$/i.test(file.name))
+  if (!zips.length) {
+    showToast('只支持拖入 .zip 压缩包；已解压的模组文件夹请用左下角「安装本地模组」', 'error')
+    return
+  }
+  const root = localStorage.getItem('fengsha-game-root')
+  if (!root) {
+    showToast('先选择游戏目录，再把模组 ZIP 拖进来', 'error')
+    return
+  }
+  for (const file of zips) await installDroppedZip(root, file)
+}
+
+async function installDroppedZip(root, file) {
+  const fallbackTitle = file.name.replace(/\.zip$/i, '')
+  installProgress.value = { title: file.name, phase: 'installing', percent: 0 }
+  try {
+    const result = await window.fengshaDesktop.installWork(root, {
+      localPath: window.fengshaDesktop.pathForFile(file),
+      title: fallbackTitle,
+      overwrite: true
+    })
+    // 预检不合格：讲清楚为什么，绝不写入游戏目录
+    if (result?.rejected) {
+      installProgress.value = null
+      log(`拖入的「${file.name}」安装失败：${result.error}`, 'error')
+      showToast(`「${fallbackTitle}」不是可用的模组：${result.error}`, 'error')
+      return
+    }
+    if (!result?.ok) throw new Error(result?.error || '安装未完成')
+    if (result.kind === 'runtime') {
+      installProgress.value = { title: file.name, phase: 'done', percent: 100 }
+      log(`拖入的「${file.name}」识别为 UE4SS 前置包，已覆盖到游戏目录的 ue4ss 下`)
+      showToast(`「${fallbackTitle}」是前置包，已安装到游戏目录`)
+      setTimeout(() => { installProgress.value = null }, 2400)
+      return
+    }
+    await scanMods()
+    installProgress.value = { title: file.name, phase: 'done', percent: 100 }
+    const issues = result.check?.issues || []
+    // UE4SS 模组装完自动追加到 mods.txt 末尾并启用——把排入的位置讲给玩家听
+    const position = mods.value.filter(mod => mod.kind !== 'pak').findIndex(mod => mod.name === result.name) + 1
+    if (issues.length) {
+      log(`「${file.name}」已安装但可能不生效：${issues.join('；')}`, 'error')
+      showToast(`「${fallbackTitle}」已安装，但可能不生效：${issues[0]}`, 'error')
+    } else if (result.kind === 'pak') {
+      log(`拖入的「${file.name}」安装完成：${result.pakType === 'IoStore' ? 'IoStore' : 'LogicMods'} PAK`)
+      showToast(`「${fallbackTitle}」已安装到 PAK 目录`)
+    } else {
+      log(`拖入的「${file.name}」安装完成：「${result.name}」已启用并排入加载顺序第 ${position} 位`)
+      showToast(`「${result.name}」已安装并排入加载顺序（第 ${position} 位）`)
+    }
+    setTimeout(() => { installProgress.value = null }, 2400)
+  } catch (error) {
+    installProgress.value = null
+    log(`拖入的「${file.name}」安装失败：${error.message}`, 'error')
+    showToast(`「${fallbackTitle}」安装失败：${error.message}`, 'error')
+  }
+}
+
 async function installMod() {
   if (window.fengshaDesktop && !localStorage.getItem('fengsha-game-root')) return chooseGame()
   if (!window.fengshaDesktop && !modsHandle.value) return chooseGame()
@@ -1815,6 +1946,15 @@ async function copyModsPath(mod = null) {
   const copied = await copyTextToClipboard(target)
   if (copied) { showToast('模组目录已复制'); log(`模组目录已复制：${target}`) }
   else { showToast('复制失败，路径已写入日志', 'error'); log(`复制失败，模组目录：${target}`, 'error') }
+}
+
+async function copyAuthorContact() {
+  const copied = await copyTextToClipboard('3549993943')
+  showToast(copied ? '作者 QQ：3549993943 已复制' : '作者 QQ：3549993943')
+}
+
+function scrollHelpTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function launchGame() {
@@ -1958,6 +2098,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
         <button :class="{ active: activeTab === '创作中心' }" @click="activeTab = '创作中心'"><Upload :size="18"/>创作中心</button>
         <button :class="{ active: activeTab === '创作指南' }" @click="activeTab = '创作指南'"><BookOpen :size="18"/>创作指南</button>
         <button :class="{ active: activeTab === '工具箱' }" @click="activeTab = '工具箱'"><Wrench :size="18"/>工具箱</button>
+        <button :class="{ active: activeTab === '使用帮助' }" @click="activeTab = '使用帮助'; selected = null; selectedWork = null"><CircleAlert :size="18"/>使用帮助</button>
+        <button v-if="isDesktop" :class="{ active: activeTab === 'AI 军师' }" @click="activeTab = 'AI 军师'; selected = null; selectedWork = null"><Bot :size="18"/>AI 军师</button>
         <a v-if="!isDesktop" class="download-nav-link" :href="`${siteBase}download.html`"><Download :size="15"/>下载桌面版</a>
       </nav>
       <div class="top-spacer"></div><div class="build-tag"><span></span> 云端工坊</div>
@@ -1986,10 +2128,26 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
         <template v-else-if="activeTab === '创作中心'">
           <div class="side-section-label">作者中心</div><button class="side-link" :class="{ chosen: activeTab === '创作中心' }" @click="activeTab = '创作中心'"><Upload :size="17"/><span>我的云端作品</span><b>{{ authorWorks.length }}</b></button><button class="side-link" @click="startDraft"><Plus :size="17"/><span>上传新作品</span></button><div class="side-divider"></div><div class="side-section-label">本机保存</div><p class="side-note">本地草稿仍只保存在此浏览器。</p>
         </template>
+        <template v-else-if="activeTab === 'AI 军师'">
+          <div class="side-section-label">烽沙 AI 军师</div>
+          <button class="side-link chosen"><Bot :size="17"/><span>模组诊断助手</span></button>
+          <div class="side-divider"></div><div class="side-section-label">可用能力</div>
+          <p class="side-note">读取游戏加载器、UE4SS 模组状态和 PAK 文件清单。所有检查均为只读。</p>
+          <button class="side-link" @click="settingsOpen = true"><Settings :size="17"/><span>游戏目录设置</span></button>
+        </template>
+        <template v-else-if="activeTab === '使用帮助'">
+          <div class="side-section-label">玩家使用帮助</div>
+          <button class="side-link chosen" @click="scrollHelpTo('help-start')"><Check :size="17"/><span>安装顺序</span></button>
+          <button class="side-link" @click="scrollHelpTo('help-ue4ss')"><Download :size="17"/><span>UE4SS 前置</span></button>
+          <button class="side-link" @click="scrollHelpTo('help-types')"><Package :size="17"/><span>模组类型与安装</span></button>
+          <button class="side-link" @click="scrollHelpTo('help-piracy')"><CircleAlert :size="17"/><span>版本兼容说明</span></button>
+          <div class="side-divider"></div><div class="side-section-label">联系作者</div>
+          <p class="side-note">QQ：3549993943</p>
+        </template>
         <template v-else>
           <div class="side-section-label">创作工坊</div><button class="side-link" @click="activeTab = '工坊'"><Package :size="17"/><span>模组工坊</span></button><button class="side-link" @click="activeTab = '本地管理'"><HardDrive :size="17"/><span>本地管理</span></button><button class="side-link" @click="activeTab = '创作中心'"><Upload :size="17"/><span>作者中心</span></button>
         </template>
-        <div class="side-bottom"><div class="game-mini"><Gamepad2 :size="16"/><span>{{ rootName }}</span></div><button v-if="activeTab === '本地管理'" class="primary-button install-button" @click="installMod"><Plus :size="18"/>安装本地模组<ChevronDown :size="15" class="button-tail"/></button><button v-else class="primary-button install-button" @click="startDraft"><Plus :size="18"/>新建作品</button></div>
+        <div class="side-bottom"><div class="game-mini"><Gamepad2 :size="16"/><span>{{ rootName }}</span></div><button v-if="activeTab === '本地管理'" class="primary-button install-button" @click="installMod"><Plus :size="18"/>安装本地模组<ChevronDown :size="15" class="button-tail"/></button><button v-else-if="activeTab === '使用帮助'" class="primary-button install-button" @click="openFengshaLoaderPage"><Download :size="17"/>获取兼容前置</button><button v-else class="primary-button install-button" @click="startDraft"><Plus :size="18"/>新建作品</button></div>
       </aside>
 
       <section class="center-column">
@@ -2015,7 +2173,18 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
           </div>
         </section>
 
-        <div v-if="activeTab === '本地管理' && !centerDetail" class="list-panel panel">
+        <section v-if="activeTab === 'AI 军师'" class="agent-panel panel">
+          <div class="agent-heading"><div class="agent-avatar"><Bot :size="24"/></div><div><span class="section-eyebrow">FENGSHA MOD AGENT</span><h1>AI 军师</h1><p>连接本机 DuckAI，协助分析烽沙 MOD 安装与加载问题。</p></div></div>
+          <div class="agent-connection"><label class="agent-field"><span>本机 API 地址</span><input v-model="agentOrigin" spellcheck="false" aria-label="本机 AI API 地址" @input="agentOnline = false; agentAnswered = false; agentError = ''; agentModelsFound = []"/></label><label class="agent-field"><span>模型</span><select v-model="agentModel" aria-label="AI 模型" @change="agentAnswered = false; agentError = ''"><option v-for="model in (agentModelsFound.length ? agentModelsFound : [agentModel])" :key="model" :value="model">{{ model }}</option></select></label><button class="secondary-button agent-connect" :disabled="agentBusy" @click="checkAgent"><RefreshCw :size="15"/>{{ agentOnline ? '重新检测' : '检测连接' }}</button></div>
+          <div class="agent-status" :class="{ online: agentOnline && !agentError, offline: agentError }"><i></i><span>{{ agentError || (agentAnswered ? `模型已回复 · ${agentModel}` : agentOnline ? '本机桥接已连接，模型能否回复尚未验证。' : '尚未连接。请先在本机启动 DuckAI 服务。') }}</span></div>
+          <div class="agent-safety"><ShieldCheck :size="15"/><span>安全边界：模型只能读取当前游戏目录的状态。不会自行安装、启用、排序、删除模组或启动游戏。</span></div>
+          <div class="agent-prompts"><span>试试这样问</span><button type="button" @click="agentDraft = '帮我检查当前 UE4SS 前置和模组状态'">检查加载器和模组</button><button type="button" @click="agentDraft = '为什么我的 PAK 模组可能没有生效？请根据当前状态分析'">分析 PAK 未生效</button></div>
+          <div class="agent-chat" aria-live="polite"><article v-for="(message, index) in agentMessages" :key="index" class="agent-message" :class="message.role"><span>{{ message.role === 'assistant' ? '军师' : '你' }}</span><p>{{ message.content }}</p></article><div v-if="agentBusy" class="agent-thinking"><LoaderCircle :size="15" class="spin"/>正在分析…</div></div>
+          <form class="agent-composer" @submit.prevent="sendAgentMessage"><textarea v-model="agentDraft" maxlength="2000" rows="2" placeholder="描述你遇到的模组问题…" :disabled="agentBusy" @keydown.ctrl.enter.prevent="sendAgentMessage"/><button class="primary-button" type="submit" :disabled="agentBusy || !agentDraft.trim()"><LoaderCircle v-if="agentBusy" :size="16" class="spin"/><Send v-else :size="16"/>发送</button></form>
+          <small class="agent-footnote">DuckAI 是非官方桥接服务。对话会从本机转发至 Duck.ai 后端；服务不提供有效 API 密钥认证，请勿公开端口或粘贴密钥、账号等隐私内容。可用性受第三方限流、网络和服务条款变化影响。</small>
+        </section>
+
+        <div v-if="activeTab === '本地管理' && !centerDetail" class="list-panel panel" :class="{ 'drag-over': zipDragOver }" @dragover="onModListDragOver" @dragleave="zipDragOver = false" @drop="onModListDrop">
           <div v-if="hasGameRoot && !ue4ssReady" class="prereq-banner"><CircleAlert :size="17"/><span><b>未检测到烽沙兼容前置</b> — PAK 和 UE4SS 模组都需要游戏兼容的加载环境。</span><button class="text-action" @click="openFengshaLoaderPage">获取烽沙专用前置</button><button class="text-action" @click="scanSteamGame">重新扫描</button></div>
           <div v-else-if="hasGameRoot && isDesktop && mods.some(mod => mod.kind === 'pak' && mod.enabled) && !pakLoaderLogSeen" class="prereq-banner"><CircleAlert :size="17"/><span><b>PAK 加载器状态待确认</b> — 检测到 UE4SS，但日志里还没有 ContainerLoader 初始化挂载记录。安装烽沙专用前置后启动游戏，再重新扫描确认。</span><button class="text-action" @click="openFengshaLoaderPage">获取烽沙专用前置</button><button class="text-action" @click="scanMods">重新扫描</button></div>
           <div v-else-if="hasGameRoot && isDesktop && pakLoaderLogSeen && mods.some(mod => mod.kind === 'pak' && mod.enabled)" class="prereq-banner prereq-ok"><ShieldCheck :size="17"/><span><b>检测到 PAK 加载器初始化日志</b> — 该记录不代表已验证每个模组内容均正常生效。</span></div>
@@ -2057,6 +2226,20 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
         </section>
 
         <section v-else-if="activeTab === '创作指南'" class="guide-panel panel"><span class="section-eyebrow">CREATOR GUIDE</span><h1>烽沙 MOD 创作指南</h1><p class="guide-lead">准备一份清楚、安全、易安装的 MOD 说明。</p><div class="guide-grid"><article><b>作品说明</b><p>写清楚功能、游戏版本、依赖、安装步骤与已知问题。使用你有权分享的内容。</p></article><article><b>安装安全</b><p>先备份存档。核对来源、文件结构和依赖；不确定时不要覆盖已有文件。</p></article><article><b>安装下载作品</b><p>从工坊下载 ZIP，确认来源后解压，再使用本地管理的文件夹安装并启用。</p></article><article><b>上传作品</b><p>上传 ZIP、封面和效果图；发布后所有玩家都能看到并下载，请确认你有权分享上传内容。</p></article></div><button class="primary-button" @click="cloudUser ? startDraft() : openAuth('register')"><Plus :size="16"/>上传 MOD</button></section>
+
+        <section v-else-if="activeTab === '使用帮助'" class="help-panel panel">
+          <header class="help-heading"><div><span class="section-eyebrow">PLAYER GUIDE · FENGSHA MOD MANAGER</span><h1>玩家使用帮助</h1><p>按顺序完成前置、目录识别和模组安装；不确定类型时先看作品说明。</p></div><button class="secondary-button" @click="settingsOpen = true"><Settings :size="15"/>游戏目录设置</button></header>
+          <div id="help-start" class="help-prereq-callout"><div class="help-callout-icon"><CircleAlert :size="21"/></div><div><b>先安装烽沙兼容的 UE4SS 前置，再安装普通 MOD</b><p>缺少加载器时，UE4SS 脚本不会生效；部分 PAK 也依赖兼容的 ContainerLoader。</p></div><button class="primary-button" @click="openFengshaLoaderPage"><Download :size="16"/>获取兼容前置<ChevronRight :size="15"/></button></div>
+          <div class="help-step-grid">
+            <article class="help-step-card"><span class="help-step-number">01</span><div><b>识别游戏目录</b><p>桌面版可在「本地管理」扫描 Steam 库，也可在游戏目录设置中手动选择《烽沙》根目录。浏览器版选择目录后，还需按浏览器提示授权。</p><button class="text-action" @click="settingsOpen = true"><FolderOpen :size="14"/>打开目录设置</button></div></article>
+            <article id="help-ue4ss" class="help-step-card help-step-important"><span class="help-step-number">02</span><div><b>先装 UE4SS 前置</b><p>游戏关闭时安装与当前游戏版本兼容的前置。完成后返回管理器重新扫描；右侧「前置环境」显示已就绪，才表示检测到 UE4SS 文件。</p><p class="help-muted">PAK / IoStore 模组可能还需要前置内的 ContainerLoader；UE4SS 显示就绪不等于 PAK 加载器已成功初始化。</p><button class="text-action" @click="openFengshaLoaderPage"><Download :size="14"/>打开烽沙兼容前置页面</button></div></article>
+            <article id="help-types" class="help-step-card"><span class="help-step-number">03</span><div><b>查看模组类型和依赖</b><p><strong>UE4SS</strong> 模组通常安装在 <code>ue4ss\Mods</code>，并由 <code>mods.txt</code> 控制启用状态与加载顺序。需要调整时，在本地管理列表中选择模组后使用上移 / 下移。</p><p><strong>PAK / IoStore</strong> 使用游戏资源目录与对应加载器，不受 UE4SS 的 <code>mods.txt</code> 排序控制；IoStore 通常需要同组的 <code>.pak</code>、<code>.ucas</code>、<code>.utoc</code> 文件齐全。</p></div></article>
+            <article class="help-step-card"><span class="help-step-number">04</span><div><b>下载并安装模组</b><p>在工坊打开作品详情，先核对游戏版本、模组类型和依赖。桌面版开启「下载后自动安装」后可直接安装；关闭时先下载 ZIP、解压，再到「本地管理 → 安装本地模组」选择解压出的单个模组文件夹。桌面版也可以直接把模组 ZIP 拖到模组列表上：工具会先检查这个包是不是能用的模组，不合格会说明原因并拒绝安装，合格则直接装好并自动排入加载顺序。</p><p>安装后检查模组状态与加载顺序，再启动游戏。出现覆盖提示时会先备份同名文件；不要在游戏运行时替换前置或模组文件。</p></div></article>
+            <article class="help-step-card"><span class="help-step-number">05</span><div><b>遇到未生效或启动报错</b><p>重新扫描目录，确认 UE4SS 前置、依赖、游戏版本和文件结构。查看管理日志中的具体错误；启用 PAK 后还要确认 ContainerLoader 初始化记录。仍无法解决时，联系模组作者并附上模组名、游戏版本和错误日志。</p></div></article>
+          </div>
+          <section id="help-piracy" class="help-boundary"><div><span class="section-eyebrow">COMPATIBILITY NOTICE</span><h2>关于盗版 / 修改版游戏</h2><p>管理器不提供盗版游戏的安装教程，也不会破解、绕过 Steam 授权校验或修补受保护的游戏文件。手动选中某个目录只代表管理器能访问该目录，不代表该版本受支持或模组可以正常加载。盗版、改包和不同版本可能缺少文件或与加载器不兼容；如需稳定使用及获得排错支持，请使用 Steam 正版，并保持游戏与前置版本匹配。</p></div><ShieldCheck :size="22"/></section>
+          <footer class="help-contact"><div><span class="section-eyebrow">AUTHOR CONTACT</span><b>作者联系方式：QQ 3549993943</b><small>反馈时请说明管理器版本、游戏版本和遇到的问题。</small></div><button class="secondary-button" @click="copyAuthorContact"><Clipboard :size="15"/>复制 QQ 号</button></footer>
+        </section>
 
         <div v-else-if="activeTab === '工具箱'" class="toolbox-panel panel"><div class="section-eyebrow">QUICK TOOLS</div><h2>烽沙工具箱</h2><p>常用的本地管理入口</p><div class="tool-grid"><button class="tool-card" @click="copyModsPath"><FolderOpen/><b>复制 Mods 相对路径</b><span>复制游戏目录内 UE4SS 模组文件夹的相对路径</span></button><button class="tool-card" @click="scanMods"><RefreshCw/><b>重新扫描</b><span>从游戏目录重新读取模组状态</span></button><button class="tool-card" @click="launchGame"><Gamepad2/><b>启动烽沙</b><span>通过 Steam 启动 App 1733690</span></button><button class="tool-card" @click="settingsOpen = true"><Settings/><b>游戏目录设置</b><span>选择或更换游戏安装目录</span></button></div></div>
         <div class="logs-panel panel"><div class="logs-head"><div class="log-tabs" role="tablist"><button type="button" role="tab" :aria-selected="logFilter === 'all'" :class="{ active: logFilter === 'all' }" @click="logFilter = 'all'">全部日志<b>{{ logCounts.all }}</b></button><button type="button" role="tab" :aria-selected="logFilter === 'info'" :class="{ active: logFilter === 'info' }" @click="logFilter = 'info'">操作记录<b>{{ logCounts.info }}</b></button><button type="button" role="tab" :aria-selected="logFilter === 'error'" :class="{ active: logFilter === 'error' }" @click="logFilter = 'error'">错误信息<b>{{ logCounts.error }}</b></button></div><button class="text-action" @click="logs = []"><Trash2 :size="14"/>清空日志</button><button class="text-action" @click="copyLogs"><Clipboard :size="14"/>复制日志</button></div><div class="logs-body"><div v-for="(entry, i) in shownLogs" :key="`${entry.time}-${i}`" class="log-line" :class="entry.type"><time>[{{ entry.time }}]</time><span>{{ entry.message }}</span></div><div v-if="!shownLogs.length" class="log-empty">{{ logs.length ? '当前分类下没有记录' : '暂无操作记录' }}</div></div></div>
