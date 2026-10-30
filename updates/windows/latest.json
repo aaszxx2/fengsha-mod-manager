@@ -1,13 +1,14 @@
 {
-  "version": "0.3.6",
-  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.6/app-a56b2e4962f3e632.zip",
-  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.6/Fengsha-Mod-Manager-Setup.exe",
-  "size": 6755814,
-  "sha256": "a56b2e4962f3e632101c9a03449bb735ce70976c73f40cecbb0a5ed36bf09b28",
+  "version": "0.3.7",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.7/app-d9b4a14b296e2f49.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.7/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6765285,
+  "sha256": "d9b4a14b296e2f492edaa63a53c87d3c4e74b2fd18168edc9371ffc38c81d29e",
   "releaseNotes": [
-    "工坊卡片新增状态角标：已安装的作品显示绿色「已安装」，下载过但没装（或已删除）的显示「已下载」",
-    "「已安装」以游戏目录里的实际文件为准，在本地管理删掉模组后角标会自动消失"
+    "新增：把模组 ZIP 直接拖到本地管理的模组列表上就能安装，不用再解压找文件夹",
+    "安装前先校验包是否合格：缺 main.lua、IoStore 不完整、空包等不合格的会说明原因并拒绝安装",
+    "合格的模组装完自动启用并排入加载顺序，提示排在第几位；工坊下载的包也走同样的校验"
   ],
-  "installerSha256": "9787bceae42c3e8ca7c24f09baa2ebf5eda9d65633a3cda1f06f6f17efafa84f",
-  "installerSize": 101237286
+  "installerSha256": "9dcb54a9f9fca6578fac1eb9c0f4a8a588f3b214a764ae495c0faab4c0dcc80e",
+  "installerSize": 101245118
 }
