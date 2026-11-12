@@ -57,7 +57,7 @@ await rename(updateZip, updatePackage)
 // 由安装程序自己去等待旧进程退出、替换文件、重启，而不是我们拿脚本去替换 resources/app
 // （那条路会在文件占用与时序上翻车）。清单里因此要带上安装包的下载地址。
 const installerUrl = `https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v${version}/Fengsha-Mod-Manager-Setup.exe`
-await writeFile(path.join(updateDirectory, 'latest.json'), JSON.stringify({ version, url: `/${path.posix.join('updates/windows', version, packageName)}`, installerUrl, size: bytes.length, sha256, releaseNotes: ['新增：把模组 ZIP 直接拖到本地管理的模组列表上就能安装，不用再解压找文件夹', '安装前先校验包是否合格：缺 main.lua、IoStore 不完整、空包等不合格的会说明原因并拒绝安装', '合格的模组装完自动启用并排入加载顺序，提示排在第几位；工坊下载的包也走同样的校验'] }, null, 2))
+await writeFile(path.join(updateDirectory, 'latest.json'), JSON.stringify({ version, url: `/${path.posix.join('updates/windows', version, packageName)}`, installerUrl, size: bytes.length, sha256, releaseNotes: ["新增蓝图工坊：浏览建筑预览图，支持搜索、分类和点赞排序","登录并点赞后解锁蓝图代码，一键复制到游戏导入；代码由云端权限保护","上传作品可选择 MOD 或蓝图，蓝图支持预览图、代码、建筑说明及作者编辑删除"] }, null, 2))
 const manifest = JSON.parse(await readFile(path.join(updateDirectory, 'latest.json'), 'utf8'))
 assert.equal(manifest.version, version)
 assert.equal(manifest.size, bytes.length)

@@ -1,0 +1,266 @@
+:root {
+  color-scheme: dark;
+  --archive-paper: #10171b;
+  --archive-ink: #e4e9eb;
+  --archive-line: #35454c;
+  --archive-red: #ffd426;
+  --archive-gold: #e5bf2a;
+  --archive-cyan: #28cbed;
+  --archive-muted: #94a1a7;
+  color: #e4e9eb;
+  background: #080d10;
+}
+body {
+  min-width: 0;
+  background: linear-gradient(#070b0de8, #080d10ed), url('./fengsha-command-header.png') center 22% / cover fixed;
+}
+button, input, select, textarea { font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif; }
+.shell { max-width: 1900px; padding: 0 16px 16px; color: #e4e9eb; }
+.topbar {
+  height: 100px;
+  gap: 8px;
+  border-bottom: 1px solid #46565d;
+  background: linear-gradient(90deg, #090e11 0%, #0d1317ee 43%, #11191dcc 100%);
+  box-shadow: inset 0 -1px #11191d, 0 8px 24px #0009;
+}
+.topbar:before, .topbar:after { display: none !important; }
+.header-art {
+  position: absolute; inset: 0 0 auto auto; z-index: 0;
+  width: 58%; height: 99px; opacity: .58; object-fit: cover; object-position: center 42%;
+  pointer-events: none; mask-image: linear-gradient(90deg, transparent, #000 20%, #000 90%, transparent);
+}
+.brand { width: 200px; flex: none; gap: 9px; white-space: nowrap; }
+.brand-mark, .brand-copy { flex: none; white-space: nowrap; }
+.brand-mark { color: var(--archive-red); font-family: 'Noto Sans SC', 'Microsoft YaHei UI', sans-serif; text-shadow: 0 0 18px #ffd42640; }
+.brand-mark span { color: #f5f7f5; }
+.brand-copy { border-color: #3a464b; }
+.brand-copy b { color: #f0f3f4; font-family: 'Noto Sans SC', 'Microsoft YaHei UI', sans-serif; letter-spacing: 2px; }
+.brand-copy small { color: #9eabb0; }
+.main-nav { z-index: 1; gap: 2px; }
+.main-nav button {
+  min-width: 88px; height: 72px; gap: 7px; border-radius: 2px 2px 0 0;
+  color: #bdc6ca; font-family: 'Microsoft YaHei UI', sans-serif;
+}
+.main-nav button svg { color: #c1c9cd; }
+.main-nav button:hover { color: white; background: #ffffff0b; }
+.main-nav button.active {
+  color: #131719; border-color: #d4b119; background: linear-gradient(145deg, #ffe034, #e9b900);
+  box-shadow: inset 0 -4px #fff26a, 0 0 24px #e7b91436;
+}
+.main-nav button.active svg { color: #111719; }
+.build-tag, .account-button, .topbar > .icon-button {
+  z-index: 2; color: #dce4e7; border-color: #3e4b51; border-radius: 3px; background: #0d1418d9;
+}
+.build-tag span { background: var(--archive-red); box-shadow: 0 0 8px #ffd42699; }
+.account-button:hover, .topbar > .icon-button:hover { color: var(--archive-red); border-color: var(--archive-red); background: #1a2022; }
+.panel {
+  position: relative; overflow: hidden; border: 1px solid #394951; border-radius: 2px;
+  color: #dce4e7; background: linear-gradient(145deg, #121a1fef, #0d1317f5);
+  box-shadow: inset 0 0 0 1px #d8e4e60b, 0 10px 28px #0008;
+}
+.panel:before, .panel:after {
+  position: absolute; z-index: 3; width: 13px; height: 13px; content: ''; pointer-events: none;
+}
+.panel:before { top: -1px; left: -1px; border-top: 2px solid var(--archive-red); border-left: 2px solid var(--archive-red); }
+.panel:after { right: -1px; bottom: -1px; border-right: 2px solid var(--archive-red); border-bottom: 2px solid var(--archive-red); }
+.workspace { grid-template-columns: 260px minmax(470px, 1fr) 320px; gap: 12px; padding-top: 12px; }
+.sidebar {
+  color: #dce4e7; border-color: #394951;
+  background: linear-gradient(#0c1317ed, #0c1317da 66%, #0c1317f5), url('./fengsha-command-header.png') center bottom / auto 75% no-repeat, #0c1317;
+}
+.side-section-label { color: #dce4e7; font-family: 'Microsoft YaHei UI', sans-serif; letter-spacing: 1px; }
+.side-section-label:after { border-color: #36464d; }
+.side-link { color: #c8d0d3; border-radius: 2px; }
+.side-link svg, .tiny-icon { color: #aebcc1; }
+.side-link:hover { color: white; background: #ffffff0b; }
+.side-link.chosen {
+  color: #131719; border-color: #e5c324;
+  background: linear-gradient(100deg, #ffdc27, #e3b600);
+  box-shadow: inset 4px 0 #fff56b, 0 0 14px #e7b91422;
+}
+.side-link.chosen svg, .side-link.chosen b { color: #101719; }
+.side-link b { color: #9ca9ae; }
+.side-divider { background: #405057; }
+.category-dot { border-color: #57676d; background: #172126; }
+.category-dot:after { background: var(--archive-cyan); }
+.game-mini { color: #aab6bb; }
+.primary-button, .secondary-button {
+  color: #15191a; border: 1px solid #f6d52d; border-radius: 2px;
+  background: linear-gradient(135deg, #ffe435, #edbd09);
+  box-shadow: inset 0 0 0 1px #fff46d85, 0 4px 14px #0007;
+}
+.primary-button:hover { color: #050809; filter: brightness(1.08); box-shadow: 0 0 18px #ffd42636; }
+.secondary-button { color: #d8e0e3; border-color: #48565c; background: linear-gradient(#202a2f, #141b1f); box-shadow: inset 0 0 0 1px #ffffff0b; }
+.secondary-button:hover { color: var(--archive-red); border-color: var(--archive-red); background: #253036; }
+.searchbox, .sortbox, .selected-path, .icon-button {
+  color: #d6e0e4; border-color: #3c4b52; border-radius: 3px; background: #11191e;
+}
+.searchbox input, .sortbox select { color: #e5ecef; }
+.searchbox input::placeholder { color: #86959b; }
+.searchbox:focus-within { border-color: var(--archive-cyan); box-shadow: 0 0 0 2px #28cbed18; }
+.sortbox option { color: #e5ecef; background: #11191e; }
+.icon-button { color: #b7c4c9; }
+.icon-button:hover, .icon-button.selected, .icon-button.subtle:hover { color: var(--archive-red); border-color: var(--archive-red); background: #202a2f; }
+.list-panel, .workshop-panel, .author-panel, .guide-panel, .toolbox-panel {
+  border-top: 2px solid var(--archive-red); color: #e4e9eb;
+  background-color: #10171b;
+  background-image: linear-gradient(#0c1317dc, #0c1317e9), url('./fengsha-command-header.png');
+  background-position: center, center 44%; background-size: cover;
+  box-shadow: inset 0 0 0 1px #d8e4e609, 0 10px 28px #0009;
+}
+.list-heading { color: #d4dde0; border-color: #3d4c52; background: linear-gradient(#202a2f, #151d21); }
+.mod-row { border-color: #344149; }
+.mod-row:hover, .mod-row.selected { background: #dbe7e510; }
+.mod-row.selected { box-shadow: inset 3px 0 var(--archive-red); }
+.row-index, .list-footer { color: #9ca9ae; }
+.mod-emblem { color: #12191c; border-color: #edca17; background: linear-gradient(145deg, #ffe33a, #d9ad00); }
+.mod-name strong, .list-footer b { color: #f0f4f5; }
+.mod-name span, .mod-version span { color: #9aa8ad; }
+.mod-version b { color: #dbe3e5; }
+.category-pill { color: #96ecfb; border-color: #27788a; background: #12313a; }
+.category-pill.alert { color: #ffe47b; border-color: #937a21; background: #332d13; }
+.switch { background: #45545a; }
+.switch.on { background: var(--archive-red); }
+.switch i { background: #101719; }
+.row-actions button { color: #a8b6bb; }
+.row-actions button:hover { color: var(--archive-red); background: #ffffff12; }
+.list-footer { border-color: #37464c; }
+.scan-status i { background: #66747a; }
+.scan-status i.online { background: #2fd4a1; }
+.empty-state { color: #aab8bd; }
+.empty-state strong { color: #edf2f4; }
+.empty-state p { color: #a4b0b5; }
+.empty-icon { color: var(--archive-red); border-color: #65777e; background: #152027; box-shadow: 0 0 24px #ffd42612; }
+.empty-icon svg { width: 38px; height: 38px; stroke-width: 1.45; }
+.logs-panel {
+  color: #dce5e8; border-color: #394951;
+  background: linear-gradient(#0c1317e8, #0c1317f0), url('./fengsha-command-header.png') center 84% / cover;
+}
+.logs-head, .log-tabs { color: #b6c2c6; border-color: #35444a; }
+.log-tabs b { color: var(--archive-red); border-color: var(--archive-red); }
+.text-action { color: #b7c4c9; }
+.text-action:hover { color: var(--archive-red); }
+.logs-body { color: #d7e0e3; border-color: #35444a; background: #0a1115e8; }
+.log-line time { color: var(--archive-cyan); }
+.log-line.error { color: #ff987e; }
+.log-line.success { color: #73ddac; }
+.log-empty { color: #9ba9ae; }
+.page-heading { border-color: #405057; }
+.section-eyebrow { color: var(--archive-red); letter-spacing: 1.8px; }
+.page-heading h1, .guide-panel h1, .toolbox-panel h2 { color: #f0f4f5; }
+.page-heading p, .guide-lead, .toolbox-panel>p { color: #9daab0; }
+.offline-banner, .author-notice {
+  color: #d8e3e7; border-color: #3d4c52;
+  background: linear-gradient(100deg, #1c292f, #141e23);
+}
+.offline-banner span, .author-notice span { color: #afbdc2; }
+.work-card, .author-stats div, .guide-grid article, .tool-card {
+  color: #e4e9eb; border-color: #3b4b51;
+  background: linear-gradient(145deg, #172126ee, #10171bf5);
+  box-shadow: inset 0 0 0 1px #d8e4e609;
+}
+.work-card:hover, .work-card.picked, .draft-row.picked { border-color: var(--archive-red); background: #1c282d; }
+.work-art { background: linear-gradient(#0b121770, #0b121770), url('./fengsha-command-header.png') center / cover; }
+.work-art:before { background: linear-gradient(110deg, transparent 30%, #ffd42638 52%, transparent 70%); }
+.work-art>span { font-family: 'Microsoft YaHei UI', sans-serif; color: var(--archive-red); text-shadow: 0 2px 8px #000; }
+.work-art.red, .work-art.teal, .work-art.gold { background-image: linear-gradient(#0b121770, #0b121770), url('./fengsha-command-header.png'); }
+.work-title-line b, .draft-section-title b, .draft-info b, .guide-grid b, .tool-card b { color: #e9eff1; }
+.work-card-body p, .draft-info span, .guide-grid p, .tool-card span { color: #a8b5ba; }
+.work-meta, .work-card-bottom, .draft-section-title span { color: #95a2a7; }
+.work-card-bottom { border-color: #35444a; }
+.work-card-bottom button { color: #14191b; border-color: var(--archive-red); background: #eac51d; }
+.work-card-bottom button:hover { background: #ffe74d; }
+.draft-row { border-color: #35444a; }
+.draft-state { color: #d4bf62; border-color: #766a35; }
+.draft-empty { color: #a8b5ba; }
+.draft-empty b { color: #e9eff1; }
+.publish-lock { color: #b8c5c9; background: #172126; }
+.publish-lock svg, .tool-card svg { color: var(--archive-red); }
+.side-note { color: #a8b5ba; }
+.draft-modal, .settings-modal, .auth-modal {
+  color: #e4e9eb; border: 1px solid #52636a;
+  background: linear-gradient(#11191df5, #0e1519fa), url('./fengsha-command-header.png') center / cover;
+  box-shadow: 0 16px 60px #000d, inset 0 0 0 1px #d8e4e610;
+}
+.modal-head h2, .draft-modal .modal-head h2, .auth-modal .modal-head h2 { color: #f0f4f5; }
+.settings-modal>p, .auth-description { color: #b1bdc1; }
+.settings-modal code { color: var(--archive-red); background: #1b292f; }
+.selected-path { color: #d6e0e4; }
+.settings-modal>small, .form-field small { color: #9eacb1; }
+.form-field { color: #d5dfe2; }
+.form-field input, .form-field select, .form-field textarea { color: #e5ecef; border-color: #3b4a50; background: #0b1216; }
+.form-field input::placeholder, .form-field textarea::placeholder { color: #829197; }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--archive-cyan); }
+.form-field input[type=file]::file-selector-button { color: #dce4e7; border-color: #46575e; background: #202b30; }
+.form-actions { border-color: #39484e; }
+.form-actions .text-action { color: #c7d1d4; }
+.form-actions .text-action:hover { color: var(--archive-red); }
+.game-card, .detail-card, .quick-card {
+  color: #dce4e7; border-color: #394951;
+  background: linear-gradient(155deg, #121a1fef, #0d1418f5);
+}
+.game-cover {
+  height: auto; aspect-ratio: 460 / 216; padding: 0; display: block; overflow: hidden;
+  background: #0a1013; border-color: #57676d; border-radius: 2px;
+}
+.game-cover:before { display: none; }
+.cover-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cover-copy small { color: #d0d9dc; }
+.cover-copy b { color: #f2f4f2; }
+.cover-copy span { color: #dce3e5; }
+.cover-emblem { color: var(--archive-red); }
+.game-status, .path-label, .game-facts, .game-facts span, .detail-head, .detail-desc, .detail-meta, .detail-empty, .quick-title, .quick-card>button { color: #b8c4c8; }
+.game-status b, .game-facts b, .detail-head b, .quick-title span:first-child { color: #e4eaec; }
+.game-facts div, .game-facts, .detail-head, .quick-title { border-color: #36464d; }
+.path-box { color: #cbd5d8; border-color: #405057; background: #0d1519; }
+.quick-card>button { border-color: #2d3b41; }
+.quick-card>button:hover { color: var(--archive-red); background: #dce8eb0b; }
+.quick-card>button svg { color: #c3d0d4; }
+.game-status i.online { background: #2fd4a1; }
+.detail-icon { color: var(--archive-red); border-color: #78651d; background: #2c2813; }
+.work-gallery img, .image-preview-grid img { border-color: #3b4a50; background: #0b1216; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--archive-cyan); outline-offset: 2px;
+}
+@media (max-width: 1270px) {
+  .workspace { grid-template-columns: 210px minmax(0, 1fr) 290px; }
+  .brand { width: 175px; }
+  .main-nav button { min-width: 76px; padding-inline: 7px; }
+}
+@media (max-width: 1000px) {
+  .topbar { height: 78px; }
+  .header-art { height: 77px; width: 62%; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { background-position: center 76%; }
+  .right-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .game-card { grid-row: span 2; }
+}
+@media (max-width: 600px) {
+  .shell { padding-inline: 8px; }
+  .topbar { height: auto; min-height: 72px; flex-wrap: wrap; padding: 8px 0; }
+  .header-art { height: 72px; width: 100%; opacity: .34; }
+  .brand { width: auto; }
+  .brand-copy { display: none; }
+  .main-nav { order: 3; width: 100%; height: 46px; overflow-x: auto; margin: 0; }
+  .main-nav button { min-width: 70px; height: 42px; flex: 1 0 auto; }
+  .top-spacer { flex: 1; }
+  .account-button { padding: 6px; font-size: 9px; }
+  .workspace { gap: 8px; padding-top: 8px; }
+  .sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .list-panel, .workshop-panel, .author-panel, .guide-panel, .toolbox-panel { height: auto; min-height: 390px; }
+  .list-panel { height: 520px; }
+  .list-heading { grid-template-columns: 25px minmax(90px, 1fr) 75px 48px 56px 64px; gap: 4px; padding-inline: 3px; font-size: 9px; }
+  .mod-row { grid-template-columns: 25px 34px minmax(80px, 1fr) 56px 38px 60px; gap: 4px; padding-inline: 3px; }
+  .mod-version { display: none; }
+  .mod-row, .list-heading { grid-template-columns: 23px 34px minmax(85px, 1fr) 58px 38px 60px; }
+  .row-actions button { width: 19px; }
+  .right-column { grid-template-columns: 1fr; }
+  .game-card { grid-row: auto; }
+  .work-grid, .guide-grid { grid-template-columns: 1fr; }
+  .page-heading { align-items: flex-start; }
+  .page-heading h1, .guide-panel h1, .toolbox-panel h2 { font-size: 19px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-field.wide { grid-column: auto; }
+  .form-actions { flex-wrap: wrap; }
+  .form-actions button { flex: 1 1 42%; }
+}
