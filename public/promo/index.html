@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>烽沙 MOD 管理器 · 蓝图工坊 — 装好模组，把好建筑带回家</title>
+<meta name="description" content="烽沙 MOD 管理器 v0.3.8：管理 UE4SS 与 PAK 模组，分享建筑蓝图。浏览预览图，点赞解锁蓝图代码，复制到游戏导入。">
+<meta property="og:title" content="烽沙 MOD 管理器 v0.3.8 · 蓝图工坊上线">
+<meta property="og:description" content="装好模组，把好建筑带回家。分享建筑预览图，点赞解锁蓝图代码，复制到游戏导入。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aaszxx2.github.io/fengsha-mod-manager/promo/">
+<meta property="og:image" content="https://aaszxx2.github.io/fengsha-mod-manager/promo/assets/hero-landscape.jpg">
+<meta name="theme-color" content="#0E1418">
+<link rel="icon" href="../assets/fengsha-mod-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* 对齐管理器工坊的视觉语言：深蓝黑底 + 单一鹰角黄（#F3D016，从工坊截图实测），
+     锐利几何、斜切角、细网格。黄色只出现在可操作项和关键信息上。 */
+  :root {
+    --bg: #0E1418;
+    --bg-2: #12191F;
+    --panel: #161E22;
+    --panel-2: #1B2429;
+    --line: #24303A;
+    --text: #E4E9EC;
+    --text-dim: #8B9AA3;
+    --yellow: #F3D016;
+    --sans: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    --display: 'Archivo Black', 'Noto Sans SC', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(.2,.7,.3,1);
+    --pad: clamp(20px, 5vw, 92px);
+    --cut: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-weight: 400; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  ::selection { background: var(--yellow); color: #0E1418; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+
+  /* 细网格底纹：战术界面感 */
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
+  }
+
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px var(--pad); border-bottom: 1px solid transparent;
+    transition: background .35s var(--ease), border-color .35s var(--ease);
+  }
+  header.scrolled { background: rgba(14,20,24,.9); backdrop-filter: blur(12px); border-bottom-color: var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 36px; height: 36px; display: grid; place-items: center;
+    background: var(--yellow); overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+  }
+  .brand-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .brand-text b { font-family: var(--display); font-size: 16px; letter-spacing: .04em; display: block; }
+  .brand-text span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .26em; color: var(--text-dim); }
+  nav { display: flex; align-items: center; gap: clamp(14px, 2.2vw, 32px); flex: none; }
+  nav a { font-size: 13.5px; color: var(--text-dim); position: relative; padding: 6px 0; transition: color .22s var(--ease); }
+  nav a::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--yellow); transition: width .28s var(--ease); }
+  nav a:hover { color: var(--text); }
+  nav a:hover::after { width: 100%; }
+  @media (max-width: 620px) {
+    nav a:not(:last-child) { display: none; }
+    .brand-text span { display: none; }
+  }
+
+  .hero {
+    position: relative; min-height: 100svh;
+    display: flex; align-items: center;
+    padding: clamp(110px, 15vh, 180px) var(--pad) clamp(64px, 10vh, 110px);
+    overflow: hidden; border-bottom: 1px solid var(--line);
+  }
+  .hero-bg {
+    position: absolute; inset: -6% 0; z-index: 0;
+    background: url('assets/hero-landscape.jpg') center 40% / cover no-repeat;
+    opacity: .36; will-change: transform;
+  }
+  .hero-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      linear-gradient(100deg, var(--bg) 18%, rgba(14,20,24,.72) 52%, rgba(14,20,24,.35) 100%),
+      linear-gradient(180deg, rgba(14,20,24,.7), transparent 32%, var(--bg) 96%);
+  }
+  .hero::after {
+    content: ''; position: absolute; right: -10%; top: -20%;
+    width: 52vw; height: 52vw; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(243,208,22,.13), transparent 62%);
+    z-index: 1;
+  }
+  .hero-inner { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; width: 100%; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: var(--yellow); margin-bottom: 26px;
+  }
+  .tag::before { content: ''; width: 26px; height: 2px; background: var(--yellow); }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-size: clamp(30px, 7.4vw, 104px);
+    line-height: 1.08; letter-spacing: -.01em; margin-bottom: 26px;
+  }
+  .hero h1 .line { display: block; overflow: hidden; }
+  .hero h1 .line > span { display: block; transform: translateY(110%); animation: rise 1s var(--ease) forwards; }
+  .hero h1 .line:nth-child(2) > span { animation-delay: .12s; }
+  @keyframes rise { to { transform: translateY(0); } }
+  .hero h1 em {
+    font-style: normal; color: #0E1418; background: var(--yellow);
+    padding: 0 .18em; display: inline-block; line-height: 1.02; transform: translateY(-.04em);
+  }
+
+  .hero p.lede {
+    max-width: 44ch; font-size: clamp(14.5px, 1.4vw, 17px);
+    color: var(--text-dim); margin-bottom: 38px; font-weight: 300;
+    opacity: 0; animation: fade 1s var(--ease) .45s forwards;
+  }
+  @keyframes fade { to { opacity: 1; } }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; opacity: 0; animation: fade 1s var(--ease) .62s forwards; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 28px; font-size: 14.5px; font-weight: 500;
+    font-family: var(--sans); cursor: pointer; border: 0;
+    transition: background .22s var(--ease), color .22s var(--ease), transform .22s var(--ease), box-shadow .22s;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+  }
+  .btn svg { width: 17px; height: 17px; }
+  .btn-primary { background: var(--yellow); color: #0E1418; }
+  .btn-primary:hover { background: #FFE04A; transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn-ghost:hover { box-shadow: inset 0 0 0 1px var(--yellow); color: var(--yellow); transform: translateY(-2px); }
+  .btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+
+  .hero-meta {
+    margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--text-dim);
+    opacity: 0; animation: fade 1s var(--ease) .78s forwards;
+  }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 8px; }
+  .hero-meta span::before { content: ''; width: 4px; height: 4px; background: var(--yellow); }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .3em; color: var(--text-dim);
+  }
+  .scroll-cue i { width: 1px; height: 40px; background: linear-gradient(var(--yellow), transparent); animation: cue 2.2s ease-in-out infinite; }
+  @keyframes cue { 0%,100% { opacity: .2; } 50% { opacity: 1; } }
+  @media (max-height: 720px) { .scroll-cue { display: none; } }
+
+  section { position: relative; padding: clamp(64px, 10vh, 120px) var(--pad); }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .sec-head { margin-bottom: clamp(34px, 5vh, 56px); }
+  .sec-num {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .28em; color: var(--yellow);
+    margin-bottom: 14px;
+  }
+  .sec-num::before { content: ''; width: 18px; height: 1px; background: var(--yellow); }
+  .sec-title { font-family: var(--display); font-size: clamp(24px, 3.4vw, 38px); line-height: 1.2; letter-spacing: .01em; }
+  .sec-desc { color: var(--text-dim); font-size: 14px; max-width: 54ch; margin-top: 12px; font-weight: 300; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  .card {
+    position: relative; background: var(--panel); padding: 30px 28px 32px;
+    border: 1px solid var(--line);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+    transition: border-color .3s var(--ease), background .3s var(--ease), transform .3s var(--ease);
+  }
+  .card:hover { border-color: rgba(243,208,22,.55); background: var(--panel-2); transform: translateY(-3px); }
+  .card-num {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .2em;
+    color: #0E1418; background: var(--yellow); padding: 3px 9px; display: inline-block; margin-bottom: 20px;
+  }
+  .card h3 { font-weight: 700; font-size: 18px; letter-spacing: .02em; margin-bottom: 10px; }
+  .card p { font-size: 13.5px; color: var(--text-dim); line-height: 1.8; font-weight: 300; }
+
+  .showcase { display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(22px, 3.6vw, 52px); align-items: center; }
+  @media (max-width: 900px) { .showcase { grid-template-columns: 1fr; } }
+  .shot { border: 1px solid var(--line); background: var(--panel); padding: 7px; position: relative; }
+  .shot::before { content: ''; position: absolute; left: -1px; top: -1px; width: 34px; height: 3px; background: var(--yellow); }
+  .shot img { width: 100%; height: auto; }
+  .shot-cap { margin-top: 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--text-dim); }
+  .showcase-copy h3 { font-family: var(--display); font-size: clamp(20px, 2.4vw, 28px); line-height: 1.3; margin-bottom: 18px; }
+  .showcase-copy ul { list-style: none; display: grid; gap: 13px; }
+  .showcase-copy li { display: flex; gap: 11px; font-size: 13.5px; color: var(--text-dim); font-weight: 300; }
+  .showcase-copy li svg { width: 15px; height: 15px; flex: none; margin-top: 4px; color: var(--yellow); }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 780px) { .steps { grid-template-columns: 1fr; } }
+  .step { background: var(--panel); border: 1px solid var(--line); padding: 28px 26px; }
+  .step b { font-family: var(--display); font-size: 38px; line-height: 1; color: var(--yellow); display: block; margin-bottom: 14px; }
+  .step h4 { font-size: 15.5px; font-weight: 700; letter-spacing: .02em; margin-bottom: 7px; }
+  .step p { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  .download { position: relative; overflow: hidden; background: var(--bg-2); border-block: 1px solid var(--line); }
+  .download::before {
+    content: ''; position: absolute; inset: 0;
+    background: url('assets/hero-landscape.jpg') center 60% / cover no-repeat;
+    opacity: .07;
+  }
+  .download .wrap { position: relative; z-index: 1; text-align: center; }
+  .download h2 { font-family: var(--display); font-size: clamp(28px, 4.2vw, 50px); line-height: 1.15; margin-bottom: 14px; }
+  .download h2 span { color: var(--yellow); }
+  .download .wrap > p { color: var(--text-dim); max-width: 42ch; margin: 0 auto 34px; font-size: 14.5px; font-weight: 300; }
+  .dl-card {
+    display: inline-flex; flex-direction: column; text-align: left;
+    border: 1px solid var(--line); background: rgba(14,20,24,.82); backdrop-filter: blur(10px);
+    min-width: min(430px, 100%);
+  }
+  .dl-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .dl-row span { color: var(--text-dim); }
+  .dl-row b { font-family: var(--mono); font-weight: 500; letter-spacing: .04em; }
+  .dl-btn {
+    display: block; padding: 19px; text-align: center;
+    background: var(--yellow); color: #0E1418; font-weight: 700; font-size: 15px;
+    transition: background .22s var(--ease);
+  }
+  .dl-btn:hover { background: #FFE04A; }
+  .dl-note { margin-top: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--text-dim); }
+  .dl-note .mirror { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); transition: color .2s var(--ease), text-decoration-color .2s; }
+  .dl-note .mirror:hover { color: var(--yellow); text-decoration-color: var(--yellow); }
+
+  footer { border-top: 1px solid var(--line); padding: 34px var(--pad); }
+  .foot { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
+  .foot a:hover { color: var(--yellow); }
+  .foot-links { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  /* 入场：仅 JS 可用时隐藏；?static=1 或脚本失败时内容照常可见 */
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    .hero h1 .line > span { transform: none; }
+    .hero p.lede, .actions, .hero-meta { opacity: 1; }
+    .js .reveal { opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  section[id]{scroll-margin-top:78px}
+  .release-pill{display:flex;align-items:center;gap:9px;width:fit-content;border:1px solid #736925;background:#39351999;padding:7px 12px;color:#ecdd87;font-size:11px;letter-spacing:1px;margin:0 0 24px}
+  .release-pill>span{width:5px;height:5px;background:var(--yellow);border-radius:50%}.release-pill b{margin-left:10px;color:var(--yellow)}
+  .hero .tag{margin-bottom:12px}.hero .lede{max-width:46ch}.hero h1{font-size:clamp(32px,6.3vw,88px)}
+  .blueprint-section{background:radial-gradient(ellipse at 80% 30%,#244b3444,transparent 60%),var(--bg-2);border-bottom:1px solid var(--line)}
+  .blueprint-intro{display:grid;grid-template-columns:1fr 1.08fr;gap:clamp(28px,5vw,76px);align-items:center}
+  .blueprint-copy .sec-title{line-height:1.4}.blueprint-copy .sec-desc{margin-top:22px;line-height:1.9}.blueprint-benefits{list-style:none;display:grid;gap:21px;margin:28px 0 32px}
+  .blueprint-benefits li{display:grid;grid-template-columns:90px 1fr;gap:14px;font-size:13px;line-height:1.8}.blueprint-benefits b{color:#e9d67c;font-weight:500;position:relative;padding-left:13px}.blueprint-benefits b:before{content:'';position:absolute;left:0;top:10px;width:4px;height:4px;background:var(--yellow)}.blueprint-benefits span{color:var(--text-dim);font-weight:300}
+  .blueprint-visual{background:#10251ee6;border:1px solid #44634c;position:relative;box-shadow:0 24px 80px #0003}.blueprint-visual:before{content:'';position:absolute;left:-1px;top:-1px;width:64px;height:3px;background:var(--yellow)}
+  .blueprint-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #36503e;padding:16px 18px}.blueprint-topline>span{font:9px var(--mono);letter-spacing:2px;color:#96b09a}.blueprint-topline b{font-size:11px;letter-spacing:2px;color:#dccb8c;font-weight:500}
+  .blueprint-drawing{position:relative;padding:6px 8px 0;background:linear-gradient(150deg,#28463233,transparent)}.blueprint-drawing svg{width:100%;display:block}.blueprint-visual-label{position:absolute;right:16px;bottom:12px;color:#91aa98;font-size:9px}
+  .blueprint-code{display:flex;gap:14px;justify-content:space-between;align-items:center;padding:20px 18px;border-block:1px solid #36503e;background:#0c1919}.blueprint-code div>span{display:block;font:9px var(--mono);letter-spacing:2px;color:#8ca699;margin-bottom:8px}.blueprint-code b{font-size:13px;font-weight:500;color:#e1e7d8}.code-lock{font-size:10px;padding:5px 8px;border:1px solid #746e3b;color:#d6cb82;white-space:nowrap}
+  .blueprint-path{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:15px 18px;background:#1c3527}.blueprint-path span{font-size:11px;color:#bccab7}.blueprint-path i{font:9px var(--mono);color:var(--yellow);font-style:normal;margin-right:5px}.blueprint-path>b{font-size:11px;color:#7e9377;font-weight:400}
+  .publish-types{margin-top:52px;padding-top:30px;border-top:1px solid #3a453b;display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}.publish-types-title h3{font-size:17px;line-height:1.5;font-weight:500}.publish-types-title .sec-num{font-size:9px;margin-bottom:9px}.publish-types p{font-size:11.5px;color:var(--text-dim);margin-top:9px;line-height:1.9}.publish-types article{padding:20px;background:#101b1e;border:1px solid #35473e;display:flex;gap:15px;align-items:flex-start}.publish-icon{font-size:26px;line-height:1;color:#d4c779}.publish-types h4{font-size:15px;font-weight:500}.publish-types h4 small{font:8px var(--mono);letter-spacing:1px;background:var(--yellow);color:#17201c;padding:3px 5px;margin-left:5px;vertical-align:middle}
+  @media(max-width:980px){.blueprint-intro{grid-template-columns:1fr;gap:34px}.blueprint-copy .sec-desc{max-width:65ch}.blueprint-visual{max-width:620px;width:100%;justify-self:center}.publish-types{grid-template-columns:1fr 1fr}.publish-types-title{grid-column:1/-1}}
+  @media(max-width:520px){.hero .tag{font-size:9px;letter-spacing:1.5px}.blueprint-benefits li{grid-template-columns:75px 1fr;gap:10px;font-size:12px}.blueprint-topline{padding:13px}.blueprint-topline>span{font-size:8px;letter-spacing:1px}.blueprint-code{padding:16px 13px}.blueprint-code b{font-size:11px}.code-lock{font-size:9px;padding:4px 6px}.blueprint-path{padding:13px 10px;gap:3px}.blueprint-path span{font-size:10px}.blueprint-path i{margin-right:3px}.publish-types{grid-template-columns:1fr;gap:12px}.publish-types article{padding:18px}.publish-types-title{margin-bottom:7px}.hero h1{font-size:clamp(32px,8vw,42px)}}
+
+</style>
+</head>
+<body>
+
+<script>
+  if (!new URLSearchParams(location.search).has('static')) {
+    document.documentElement.classList.add('js')
+  }
+</script>
+
+<header id="header">
+  <a class="brand" href="#top">
+    <span class="brand-mark"><img src="assets/brand-icon.png" alt="烽沙 MOD 管理器图标"></span>
+    <span class="brand-text">
+      <b>烽沙</b>
+      <span>MOD WORKSHOP</span>
+    </span>
+  </a>
+  <nav>
+    <a href="#blueprints">蓝图工坊</a>
+    <a href="#features">模组管理</a>
+    <a href="#look">界面</a>
+    <a href="#install">安装</a>
+    <a href="#download">下载</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-inner">
+      <span class="tag">V0.3.8 · BLUEPRINT WORKSHOP</span>
+      <a class="release-pill" href="#blueprints"><span></span>蓝图工坊现已上线 <b>↗</b></a>
+      <h1>
+        <span class="line"><span>装好模组，</span></span>
+        <span class="line"><span>把<em>好建筑</em>带回家</span></span>
+      </h1>
+      <p class="lede">
+        模组安装、管理与建筑蓝图分享，都在同一个工坊。
+        看中一座建筑，给作者一个赞，复制蓝图代码，回到游戏粘贴导入。
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+          下载 Windows 版
+        </a>
+        <a class="btn btn-ghost" href="https://aaszxx2.github.io/fengsha-mod-manager/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          打开在线工坊
+        </a>
+      </div>
+      <div class="hero-meta">
+        <span>WINDOWS 10 / 11</span>
+        <span data-release-size>约 97 MiB</span>
+        <span data-release-version>v0.3.8</span>
+        <span>MOD + 建筑蓝图</span>
+      </div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
+  </section>
+
+
+  <section id="blueprints" class="blueprint-section">
+    <div class="wrap">
+      <div class="blueprint-intro">
+        <div class="blueprint-copy reveal">
+          <span class="sec-num">01 / BLUEPRINT WORKSHOP</span>
+          <h2 class="sec-title">你的得意之作，<br>也是别人的建造灵感。</h2>
+          <p class="sec-desc">一座庭院、一处工坊、一片城池。把建筑预览图与游戏导出的蓝图代码分享出来，让好设计在更多玩家的世界里生长。</p>
+          <ul class="blueprint-benefits">
+            <li><b>先看建筑</b><span>用预览图发现喜欢的设计，按建筑分类浏览，也能搜索作品与作者。</span></li>
+            <li><b>为创作点赞</b><span>登录并点赞支持作者后，解锁作品的完整蓝图代码。</span></li>
+            <li><b>带回游戏</b><span>一键复制代码，在游戏的蓝图导入界面粘贴，继续你的建造。</span></li>
+          </ul>
+          <a class="btn btn-primary" href="../">打开工坊，发现建筑 <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="blueprint-visual reveal" aria-label="建筑蓝图与代码解锁流程示意">
+          <div class="blueprint-topline"><span>BUILD. SHARE. INSPIRE.</span><b>蓝图工坊</b></div>
+          <div class="blueprint-drawing">
+            <svg viewBox="0 0 560 345" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="庭院建筑的等距蓝图线稿">
+              <defs><pattern id="bp-grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" stroke="#467063" stroke-opacity=".22"/></pattern></defs>
+              <rect width="560" height="345" fill="url(#bp-grid)"/>
+              <g stroke="#548d78" stroke-width="1"><path d="M55 235 275 110 505 240 285 365Z"/><path d="M75 224 295 349M115 201 335 326M155 179 375 304M195 156 415 281M235 133 455 258"/><path d="M95 257 315 132M135 280 355 155M175 303 395 178M215 326 435 201"/></g>
+              <g stroke="#e1cf78" stroke-width="1.7" stroke-linejoin="round">
+                <path d="m110 210 0-58 79 45v58Z" fill="#173b32"/><path d="m189 197 57-33v58l-57 33Z" fill="#102c27"/>
+                <path d="m92 153 68-70 102 69-73 45Z" fill="#234838"/><path d="m160 83 14 53 88 16M174 136 110 172M160 83 229 118"/>
+                <path d="m123 183 0 30 18 10v-30Zm34 19v29l18 10v-29Z"/>
+                <path d="m315 205 0-69 85 49v69Z" fill="#173b32"/><path d="m400 185 62-36v69l-62 36Z" fill="#102c27"/>
+                <path d="m295 137 76-76 109 73-80 51Z" fill="#234838"/><path d="m371 61 16 58 93 15M387 119l-72 39M371 61l74 39"/>
+                <path d="m332 163 0 32 20 12v-32Zm35 20v32l20 12v-32Z"/>
+                <path d="m210 231 75 44 73-42M211 220l74 43 73-42M285 263v12"/>
+                <path d="m168 251 116 67 118-68M168 239v12M284 306v12M402 238v12"/>
+                <path d="m243 163 38-22 36 21M248 181l33-19 34 19M281 141v21"/>
+              </g>
+              <g stroke="#acc6a0" stroke-width="1" stroke-dasharray="4 5"><path d="M110 152V42M462 149V42M110 52h352M88 210 50 232M168 251l-38 22M58 228l80 46"/></g>
+              <g fill="#a2bca7" font-family="monospace" font-size="9" letter-spacing="2"><text x="243" y="44">BLUEPRINT</text><text x="26" y="313">创造 / 分享 / 再建造</text></g>
+            </svg>
+            <span class="blueprint-visual-label">建筑蓝图示意</span>
+          </div>
+          <div class="blueprint-code"><div><span>BLUEPRINT CODE</span><b>给作者一个赞，解锁完整代码</b></div><span class="code-lock">点赞后可见</span></div>
+          <div class="blueprint-path"><span><i>01</i> 欣赏预览</span><b>→</b><span><i>02</i> 点赞解锁</span><b>→</b><span><i>03</i> 复制导入</span></div>
+        </div>
+      </div>
+      <div class="publish-types reveal">
+        <div class="publish-types-title"><span class="sec-num">TWO WAYS TO CREATE</span><h3>两种作品，同一个创作入口。</h3><p>点击“上传作品”，选择你想分享的内容。</p></div>
+        <article><span class="publish-icon" aria-hidden="true">◈</span><div><h4>MOD 作品</h4><p>上传 ZIP 模组包、封面与效果图，沿用熟悉的发布流程。</p></div></article>
+        <article><span class="publish-icon" aria-hidden="true">▤</span><div><h4>蓝图作品 <small>NEW</small></h4><p>粘贴蓝图代码，上传建筑预览图，再补充名称、分类与建造说明。</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-num">02 / MOD MANAGEMENT</span>
+        <h2 class="sec-title">四件事，工具替你做完</h2>
+        <p class="sec-desc">装模组本来不该这么麻烦。容易出错的环节都收进工具里，你只需要选文件。</p>
+      </div>
+      <div class="grid reveal">
+        <article class="card">
+          <span class="card-num">01</span>
+          <h3>一键安装</h3>
+          <p>选好 ZIP，剩下的交给它。中文名、空格、多余的顶层文件夹都会自动处理，装完自动登记到 mods.txt。</p>
+        </article>
+        <article class="card">
+          <span class="card-num">02</span>
+          <h3>云端工坊</h3>
+          <p>看到喜欢的作品，点一下就能装进游戏。不用再下载、解压、拖进目录，安装过程带进度和校验。</p>
+        </article>
+        <article class="card">
+          <span class="card-num">03</span>
+          <h3>前置识别</h3>
+          <p>自动分辨 UE4SS 本体、Lua 模组和 PAK 资源，各归各位。前置包装到该去的地方，不再堆在 Mods 里。</p>
+        </article>
+        <article class="card">
+          <span class="card-num">04</span>
+          <h3>装完自检</h3>
+          <p>缺 main.lua、多套一层目录、前置不完整——这些问题装完当场告诉你，不用进游戏才发现没生效。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="look" style="background: var(--bg-2); border-block: 1px solid var(--line);">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-num">03 / INTERFACE</span>
+        <h2 class="sec-title">所有模组，一屏看清</h2>
+      </div>
+      <div class="showcase">
+        <div class="reveal">
+          <div class="shot"><img src="assets/ui-list.jpg" alt="烽沙 MOD 管理器本地管理界面，列出已安装的模组及其启用状态"></div>
+          <p class="shot-cap">LOCAL MANAGER · 模组列表与启用状态</p>
+        </div>
+        <div class="showcase-copy reveal">
+          <h3>从模组列表，<br>看到每一项状态</h3>
+          <ul>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span>启用、停用、排序、删除，都是点一下的事，改之前自动备份 mods.txt</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span>UE4SS 前置状态和版本单独显示，不用在列表里找它——它本来就不是模组</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span>缺少入口文件的模组会被标出来，并直接告诉你该找作者</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-num">04 / GET STARTED</span>
+        <h2 class="sec-title">三步，从下载到能用</h2>
+      </div>
+      <div class="steps reveal">
+        <div class="step">
+          <b>01</b>
+          <h4>下载并安装</h4>
+          <p>双击安装包，可以自己选安装位置，会自动创建桌面和开始菜单快捷方式。</p>
+        </div>
+        <div class="step">
+          <b>02</b>
+          <h4>选择游戏目录</h4>
+          <p>选中烽沙的安装目录即可，工具会自动识别；Steam 用户也能一键扫描库。</p>
+        </div>
+        <div class="step">
+          <b>03</b>
+          <h4>装模组</h4>
+          <p>从工坊下载，或把 ZIP 拖进来。检查文件结构、前置状态和启用顺序，再启动游戏。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="download">
+    <div class="wrap">
+      <h2>下一座好建筑，<br>从<span>你的世界</span>开始。</h2>
+      <p>下载 v0.3.8，体验蓝图工坊与 MOD 管理。已安装旧版的玩家，打开管理器检查更新即可。</p>
+      <div class="dl-card">
+        <div class="dl-row"><span>版本</span><b data-release-version>v0.3.8</b></div>
+        <div class="dl-row"><span>系统</span><b>Windows 10 / 11（64 位）</b></div>
+        <div class="dl-row"><span>大小</span><b data-release-size>约 97 MiB</b></div>
+        <a class="dl-btn" href="https://github.com/aaszxx2/fengsha-mod-manager/releases/latest/download/Fengsha-Mod-Manager-Setup.exe">
+          下载 Fengsha-Mod-Manager-Setup.exe
+        </a>
+      </div>
+      <p class="dl-note">INSTALLER HOSTED ON GITHUB RELEASES · <a class="mirror" href="https://gh-proxy.com/https://github.com/aaszxx2/fengsha-mod-manager/releases/latest/download/Fengsha-Mod-Manager-Setup.exe" target="_blank" rel="noopener" title="第三方加速通道，文件来自 GitHub 官方发布">国内下载慢？用加速通道</a></p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot">
+    <span>烽沙 MOD 管理器 · 由玩家做的工具</span>
+    <div class="foot-links">
+      <a href="https://aaszxx2.github.io/fengsha-mod-manager/" target="_blank" rel="noopener">在线工坊</a>
+      <a href="https://github.com/aaszxx2/fengsha-mod-manager" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://aaszxx2.github.io/fengsha-mod-manager/download.html">下载页</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var header = document.getElementById('header');
+  var heroBg = document.getElementById('heroBg');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function onScroll() {
+    header.classList.toggle('scrolled', window.scrollY > 40);
+    if (!reduce && heroBg) {
+      var y = Math.min(window.scrollY, window.innerHeight);
+      heroBg.style.transform = 'translate3d(0,' + (y * 0.16) + 'px,0)';
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Keep the promotional page aligned with the same release metadata as the download page.
+  fetch('../download.json', { cache: 'no-store' }).then(function (response) {
+    if (!response.ok) throw new Error('Download metadata unavailable');
+    return response.json();
+  }).then(function (release) {
+    if (/^\d+\.\d+\.\d+$/.test(release.version || '')) document.querySelectorAll('[data-release-version]').forEach(function (el) { el.textContent = 'v' + release.version; });
+    if (typeof release.size === 'string') document.querySelectorAll('[data-release-size]').forEach(function (el) { el.textContent = release.size; });
+  }).catch(function () { /* The published version remains visible when offline. */ });
+
+  var items = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || reduce) {
+    items.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      });
+    }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>

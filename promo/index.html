@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>烽沙 MOD 管理器 — 把模组装进游戏，只需要一次点击</title>
-<meta name="description" content="烽沙 MOD 管理器：自动识别 UE4SS 与 PAK 模组，下载即安装，装完还会告诉你它到底能不能用。">
+<title>烽沙 MOD 管理器 · 蓝图工坊 — 装好模组，把好建筑带回家</title>
+<meta name="description" content="烽沙 MOD 管理器 v0.3.8：管理 UE4SS 与 PAK 模组，分享建筑蓝图。浏览预览图，点赞解锁蓝图代码，复制到游戏导入。">
+<meta property="og:title" content="烽沙 MOD 管理器 v0.3.8 · 蓝图工坊上线">
+<meta property="og:description" content="装好模组，把好建筑带回家。分享建筑预览图，点赞解锁蓝图代码，复制到游戏导入。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aaszxx2.github.io/fengsha-mod-manager/promo/">
+<meta property="og:image" content="https://aaszxx2.github.io/fengsha-mod-manager/promo/assets/hero-landscape.jpg">
 <meta name="theme-color" content="#0E1418">
 <link rel="icon" href="../assets/fengsha-mod-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -250,6 +255,24 @@
     .js .reveal { opacity: 1; transform: none; }
     html { scroll-behavior: auto; }
   }
+
+  section[id]{scroll-margin-top:78px}
+  .release-pill{display:flex;align-items:center;gap:9px;width:fit-content;border:1px solid #736925;background:#39351999;padding:7px 12px;color:#ecdd87;font-size:11px;letter-spacing:1px;margin:0 0 24px}
+  .release-pill>span{width:5px;height:5px;background:var(--yellow);border-radius:50%}.release-pill b{margin-left:10px;color:var(--yellow)}
+  .hero .tag{margin-bottom:12px}.hero .lede{max-width:46ch}.hero h1{font-size:clamp(32px,6.3vw,88px)}
+  .blueprint-section{background:radial-gradient(ellipse at 80% 30%,#244b3444,transparent 60%),var(--bg-2);border-bottom:1px solid var(--line)}
+  .blueprint-intro{display:grid;grid-template-columns:1fr 1.08fr;gap:clamp(28px,5vw,76px);align-items:center}
+  .blueprint-copy .sec-title{line-height:1.4}.blueprint-copy .sec-desc{margin-top:22px;line-height:1.9}.blueprint-benefits{list-style:none;display:grid;gap:21px;margin:28px 0 32px}
+  .blueprint-benefits li{display:grid;grid-template-columns:90px 1fr;gap:14px;font-size:13px;line-height:1.8}.blueprint-benefits b{color:#e9d67c;font-weight:500;position:relative;padding-left:13px}.blueprint-benefits b:before{content:'';position:absolute;left:0;top:10px;width:4px;height:4px;background:var(--yellow)}.blueprint-benefits span{color:var(--text-dim);font-weight:300}
+  .blueprint-visual{background:#10251ee6;border:1px solid #44634c;position:relative;box-shadow:0 24px 80px #0003}.blueprint-visual:before{content:'';position:absolute;left:-1px;top:-1px;width:64px;height:3px;background:var(--yellow)}
+  .blueprint-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #36503e;padding:16px 18px}.blueprint-topline>span{font:9px var(--mono);letter-spacing:2px;color:#96b09a}.blueprint-topline b{font-size:11px;letter-spacing:2px;color:#dccb8c;font-weight:500}
+  .blueprint-drawing{position:relative;padding:6px 8px 0;background:linear-gradient(150deg,#28463233,transparent)}.blueprint-drawing svg{width:100%;display:block}.blueprint-visual-label{position:absolute;right:16px;bottom:12px;color:#91aa98;font-size:9px}
+  .blueprint-code{display:flex;gap:14px;justify-content:space-between;align-items:center;padding:20px 18px;border-block:1px solid #36503e;background:#0c1919}.blueprint-code div>span{display:block;font:9px var(--mono);letter-spacing:2px;color:#8ca699;margin-bottom:8px}.blueprint-code b{font-size:13px;font-weight:500;color:#e1e7d8}.code-lock{font-size:10px;padding:5px 8px;border:1px solid #746e3b;color:#d6cb82;white-space:nowrap}
+  .blueprint-path{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:15px 18px;background:#1c3527}.blueprint-path span{font-size:11px;color:#bccab7}.blueprint-path i{font:9px var(--mono);color:var(--yellow);font-style:normal;margin-right:5px}.blueprint-path>b{font-size:11px;color:#7e9377;font-weight:400}
+  .publish-types{margin-top:52px;padding-top:30px;border-top:1px solid #3a453b;display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}.publish-types-title h3{font-size:17px;line-height:1.5;font-weight:500}.publish-types-title .sec-num{font-size:9px;margin-bottom:9px}.publish-types p{font-size:11.5px;color:var(--text-dim);margin-top:9px;line-height:1.9}.publish-types article{padding:20px;background:#101b1e;border:1px solid #35473e;display:flex;gap:15px;align-items:flex-start}.publish-icon{font-size:26px;line-height:1;color:#d4c779}.publish-types h4{font-size:15px;font-weight:500}.publish-types h4 small{font:8px var(--mono);letter-spacing:1px;background:var(--yellow);color:#17201c;padding:3px 5px;margin-left:5px;vertical-align:middle}
+  @media(max-width:980px){.blueprint-intro{grid-template-columns:1fr;gap:34px}.blueprint-copy .sec-desc{max-width:65ch}.blueprint-visual{max-width:620px;width:100%;justify-self:center}.publish-types{grid-template-columns:1fr 1fr}.publish-types-title{grid-column:1/-1}}
+  @media(max-width:520px){.hero .tag{font-size:9px;letter-spacing:1.5px}.blueprint-benefits li{grid-template-columns:75px 1fr;gap:10px;font-size:12px}.blueprint-topline{padding:13px}.blueprint-topline>span{font-size:8px;letter-spacing:1px}.blueprint-code{padding:16px 13px}.blueprint-code b{font-size:11px}.code-lock{font-size:9px;padding:4px 6px}.blueprint-path{padding:13px 10px;gap:3px}.blueprint-path span{font-size:10px}.blueprint-path i{margin-right:3px}.publish-types{grid-template-columns:1fr;gap:12px}.publish-types article{padding:18px}.publish-types-title{margin-bottom:7px}.hero h1{font-size:clamp(32px,8vw,42px)}}
+
 </style>
 </head>
 <body>
@@ -269,7 +292,8 @@
     </span>
   </a>
   <nav>
-    <a href="#features">功能</a>
+    <a href="#blueprints">蓝图工坊</a>
+    <a href="#features">模组管理</a>
     <a href="#look">界面</a>
     <a href="#install">安装</a>
     <a href="#download">下载</a>
@@ -281,14 +305,15 @@
   <section class="hero">
     <div class="hero-bg" id="heroBg"></div>
     <div class="hero-inner">
-      <span class="tag">FENGSHA · MOD WORKSHOP</span>
+      <span class="tag">V0.3.8 · BLUEPRINT WORKSHOP</span>
+      <a class="release-pill" href="#blueprints"><span></span>蓝图工坊现已上线 <b>↗</b></a>
       <h1>
-        <span class="line"><span>把模组装进游戏，</span></span>
-        <span class="line"><span>只需要<em>一次</em>点击</span></span>
+        <span class="line"><span>装好模组，</span></span>
+        <span class="line"><span>把<em>好建筑</em>带回家</span></span>
       </h1>
       <p class="lede">
-        自动识别 UE4SS 与 PAK 模组，下载即安装，装完还会告诉你它到底能不能用。
-        不用再解压、改名、翻目录、手改 mods.txt。
+        模组安装、管理与建筑蓝图分享，都在同一个工坊。
+        看中一座建筑，给作者一个赞，复制蓝图代码，回到游戏粘贴导入。
       </p>
       <div class="actions">
         <a class="btn btn-primary" href="#download">
@@ -297,23 +322,73 @@
         </a>
         <a class="btn btn-ghost" href="https://aaszxx2.github.io/fengsha-mod-manager/" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-          先看看工坊
+          打开在线工坊
         </a>
       </div>
       <div class="hero-meta">
         <span>WINDOWS 10 / 11</span>
-        <span>约 96 MB</span>
-        <span>v0.3.3</span>
-        <span>支持中文模组名</span>
+        <span data-release-size>约 97 MiB</span>
+        <span data-release-version>v0.3.8</span>
+        <span>MOD + 建筑蓝图</span>
       </div>
     </div>
     <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
   </section>
 
+
+  <section id="blueprints" class="blueprint-section">
+    <div class="wrap">
+      <div class="blueprint-intro">
+        <div class="blueprint-copy reveal">
+          <span class="sec-num">01 / BLUEPRINT WORKSHOP</span>
+          <h2 class="sec-title">你的得意之作，<br>也是别人的建造灵感。</h2>
+          <p class="sec-desc">一座庭院、一处工坊、一片城池。把建筑预览图与游戏导出的蓝图代码分享出来，让好设计在更多玩家的世界里生长。</p>
+          <ul class="blueprint-benefits">
+            <li><b>先看建筑</b><span>用预览图发现喜欢的设计，按建筑分类浏览，也能搜索作品与作者。</span></li>
+            <li><b>为创作点赞</b><span>登录并点赞支持作者后，解锁作品的完整蓝图代码。</span></li>
+            <li><b>带回游戏</b><span>一键复制代码，在游戏的蓝图导入界面粘贴，继续你的建造。</span></li>
+          </ul>
+          <a class="btn btn-primary" href="../">打开工坊，发现建筑 <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="blueprint-visual reveal" aria-label="建筑蓝图与代码解锁流程示意">
+          <div class="blueprint-topline"><span>BUILD. SHARE. INSPIRE.</span><b>蓝图工坊</b></div>
+          <div class="blueprint-drawing">
+            <svg viewBox="0 0 560 345" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="庭院建筑的等距蓝图线稿">
+              <defs><pattern id="bp-grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" stroke="#467063" stroke-opacity=".22"/></pattern></defs>
+              <rect width="560" height="345" fill="url(#bp-grid)"/>
+              <g stroke="#548d78" stroke-width="1"><path d="M55 235 275 110 505 240 285 365Z"/><path d="M75 224 295 349M115 201 335 326M155 179 375 304M195 156 415 281M235 133 455 258"/><path d="M95 257 315 132M135 280 355 155M175 303 395 178M215 326 435 201"/></g>
+              <g stroke="#e1cf78" stroke-width="1.7" stroke-linejoin="round">
+                <path d="m110 210 0-58 79 45v58Z" fill="#173b32"/><path d="m189 197 57-33v58l-57 33Z" fill="#102c27"/>
+                <path d="m92 153 68-70 102 69-73 45Z" fill="#234838"/><path d="m160 83 14 53 88 16M174 136 110 172M160 83 229 118"/>
+                <path d="m123 183 0 30 18 10v-30Zm34 19v29l18 10v-29Z"/>
+                <path d="m315 205 0-69 85 49v69Z" fill="#173b32"/><path d="m400 185 62-36v69l-62 36Z" fill="#102c27"/>
+                <path d="m295 137 76-76 109 73-80 51Z" fill="#234838"/><path d="m371 61 16 58 93 15M387 119l-72 39M371 61l74 39"/>
+                <path d="m332 163 0 32 20 12v-32Zm35 20v32l20 12v-32Z"/>
+                <path d="m210 231 75 44 73-42M211 220l74 43 73-42M285 263v12"/>
+                <path d="m168 251 116 67 118-68M168 239v12M284 306v12M402 238v12"/>
+                <path d="m243 163 38-22 36 21M248 181l33-19 34 19M281 141v21"/>
+              </g>
+              <g stroke="#acc6a0" stroke-width="1" stroke-dasharray="4 5"><path d="M110 152V42M462 149V42M110 52h352M88 210 50 232M168 251l-38 22M58 228l80 46"/></g>
+              <g fill="#a2bca7" font-family="monospace" font-size="9" letter-spacing="2"><text x="243" y="44">BLUEPRINT</text><text x="26" y="313">创造 / 分享 / 再建造</text></g>
+            </svg>
+            <span class="blueprint-visual-label">建筑蓝图示意</span>
+          </div>
+          <div class="blueprint-code"><div><span>BLUEPRINT CODE</span><b>给作者一个赞，解锁完整代码</b></div><span class="code-lock">点赞后可见</span></div>
+          <div class="blueprint-path"><span><i>01</i> 欣赏预览</span><b>→</b><span><i>02</i> 点赞解锁</span><b>→</b><span><i>03</i> 复制导入</span></div>
+        </div>
+      </div>
+      <div class="publish-types reveal">
+        <div class="publish-types-title"><span class="sec-num">TWO WAYS TO CREATE</span><h3>两种作品，同一个创作入口。</h3><p>点击“上传作品”，选择你想分享的内容。</p></div>
+        <article><span class="publish-icon" aria-hidden="true">◈</span><div><h4>MOD 作品</h4><p>上传 ZIP 模组包、封面与效果图，沿用熟悉的发布流程。</p></div></article>
+        <article><span class="publish-icon" aria-hidden="true">▤</span><div><h4>蓝图作品 <small>NEW</small></h4><p>粘贴蓝图代码，上传建筑预览图，再补充名称、分类与建造说明。</p></div></article>
+      </div>
+    </div>
+  </section>
+
   <section id="features">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">01 / FEATURES</span>
+        <span class="sec-num">02 / MOD MANAGEMENT</span>
         <h2 class="sec-title">四件事，工具替你做完</h2>
         <p class="sec-desc">装模组本来不该这么麻烦。容易出错的环节都收进工具里，你只需要选文件。</p>
       </div>
@@ -345,7 +420,7 @@
   <section id="look" style="background: var(--bg-2); border-block: 1px solid var(--line);">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">02 / INTERFACE</span>
+        <span class="sec-num">03 / INTERFACE</span>
         <h2 class="sec-title">所有模组，一屏看清</h2>
       </div>
       <div class="showcase">
@@ -354,7 +429,7 @@
           <p class="shot-cap">LOCAL MANAGER · 模组列表与启用状态</p>
         </div>
         <div class="showcase-copy reveal">
-          <h3>该看到的都在，<br>不该操心的都不在</h3>
+          <h3>从模组列表，<br>看到每一项状态</h3>
           <ul>
             <li>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
@@ -377,7 +452,7 @@
   <section id="install">
     <div class="wrap">
       <div class="sec-head reveal">
-        <span class="sec-num">03 / GET STARTED</span>
+        <span class="sec-num">04 / GET STARTED</span>
         <h2 class="sec-title">三步，从下载到能用</h2>
       </div>
       <div class="steps reveal">
@@ -394,7 +469,7 @@
         <div class="step">
           <b>03</b>
           <h4>装模组</h4>
-          <p>从工坊下载，或把 ZIP 拖进来。装完会告诉你这个模组能不能被游戏加载。</p>
+          <p>从工坊下载，或把 ZIP 拖进来。检查文件结构、前置状态和启用顺序，再启动游戏。</p>
         </div>
       </div>
     </div>
@@ -402,12 +477,12 @@
 
   <section id="download" class="download">
     <div class="wrap">
-      <h2>装好，<span>开局</span>。</h2>
-      <p>下载安装包，双击安装。已经装过旧版本的话，打开工具会自动提示更新。</p>
+      <h2>下一座好建筑，<br>从<span>你的世界</span>开始。</h2>
+      <p>下载 v0.3.8，体验蓝图工坊与 MOD 管理。已安装旧版的玩家，打开管理器检查更新即可。</p>
       <div class="dl-card">
-        <div class="dl-row"><span>版本</span><b>v0.3.3</b></div>
+        <div class="dl-row"><span>版本</span><b data-release-version>v0.3.8</b></div>
         <div class="dl-row"><span>系统</span><b>Windows 10 / 11（64 位）</b></div>
-        <div class="dl-row"><span>大小</span><b>约 96 MB</b></div>
+        <div class="dl-row"><span>大小</span><b data-release-size>约 97 MiB</b></div>
         <a class="dl-btn" href="https://github.com/aaszxx2/fengsha-mod-manager/releases/latest/download/Fengsha-Mod-Manager-Setup.exe">
           下载 Fengsha-Mod-Manager-Setup.exe
         </a>
@@ -444,6 +519,15 @@
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+
+  // Keep the promotional page aligned with the same release metadata as the download page.
+  fetch('../download.json', { cache: 'no-store' }).then(function (response) {
+    if (!response.ok) throw new Error('Download metadata unavailable');
+    return response.json();
+  }).then(function (release) {
+    if (/^\d+\.\d+\.\d+$/.test(release.version || '')) document.querySelectorAll('[data-release-version]').forEach(function (el) { el.textContent = 'v' + release.version; });
+    if (typeof release.size === 'string') document.querySelectorAll('[data-release-size]').forEach(function (el) { el.textContent = release.size; });
+  }).catch(function () { /* The published version remains visible when offline. */ });
 
   var items = document.querySelectorAll('.reveal');
   if (!('IntersectionObserver' in window) || reduce) {
