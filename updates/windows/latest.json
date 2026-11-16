@@ -1,14 +1,13 @@
 {
-  "version": "0.3.8",
-  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.8/app-c213f4bf31b0fd85.zip",
-  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.8/Fengsha-Mod-Manager-Setup.exe",
-  "size": 6775472,
-  "sha256": "c213f4bf31b0fd8546f9f83f458c0b3194d5c08e665061759af3659908c7ce08",
+  "version": "0.3.9",
+  "url": "https://ysnajhzywykjwlfhmhuu.supabase.co/storage/v1/object/public/fengsha-updates/updates/windows/0.3.9/app-cd92bd662c3c31fb.zip",
+  "installerUrl": "https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v0.3.9/Fengsha-Mod-Manager-Setup.exe",
+  "size": 6789546,
+  "sha256": "cd92bd662c3c31fb93b1106badf6cc64ac2b45e12dd3027c2ae48e08c940fe3c",
   "releaseNotes": [
-    "新增蓝图工坊：浏览建筑预览图，支持搜索、分类和点赞排序",
-    "登录并点赞后解锁蓝图代码，一键复制到游戏导入；代码由云端权限保护",
-    "上传作品可选择 MOD 或蓝图，蓝图支持预览图、代码、建筑说明及作者编辑删除"
+    "Nexus 模组无法在管理器内下载时，可直接打开对应的模组主页",
+    "第三方模组详情页新增明确的来源主页入口"
   ],
-  "installerSha256": "af3e35137de101fd814b0d21089de973511eda56a552b937ce7aa1daf2487bc4",
-  "installerSize": 101253168
+  "installerSha256": "88b09e1f75ca329563e8b5c8849c4303b177f19cca11b2e6d68785f426284d4a",
+  "installerSize": 101265444
 }

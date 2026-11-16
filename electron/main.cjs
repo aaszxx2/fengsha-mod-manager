@@ -6,6 +6,7 @@ const { promisify } = require('node:util')
 const { spawn } = require('node:child_process')
 const zip = require('./zip.cjs')
 const { createHash } = require('node:crypto')
+const { searchThirdPartyMods, downloadThirdPartyMod } = require('./third-party-mods.cjs')
 
 const parts = ['MOProject', 'Binaries', 'Win64', 'ue4ss', 'Mods']
 const pakKinds = { LogicMods: 'LogicMods', IoStore: '~mods' }
@@ -873,6 +874,8 @@ ipcMain.handle('set-pak-enabled', (_event, root, type, name, enabled) => setPakE
 ipcMain.handle('mod-exists', async (_event, root, name) => !!await fs.lstat(safeModPath(root, name)).catch(error => error.code === 'ENOENT' ? null : Promise.reject(error)))
 ipcMain.handle('install-mod', (_event, ...args) => installMod(...args))
 ipcMain.handle('install-work', (event, root, options) => installWork(root, options, progress => event.sender.send('install-work-progress', progress)))
+ipcMain.handle('search-third-party-mods', (_event, query) => searchThirdPartyMods(query))
+ipcMain.handle('download-third-party-mod', (event, item) => downloadThirdPartyMod(item, progress => event.sender.send('third-party-download-progress', progress)))
 ipcMain.handle('launch-game', () => shell.openExternal('steam://run/1733690'))
 // 在资源管理器里打开指定目录（用户菜单的「打开游戏路径」）。
 // shell.openPath 成功时返回空字符串，失败返回错误描述，原样交给渲染层展示。

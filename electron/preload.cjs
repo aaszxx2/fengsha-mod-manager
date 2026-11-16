@@ -12,6 +12,13 @@ contextBridge.exposeInMainWorld('fengshaDesktop', {
   modExists: (root, name) => ipcRenderer.invoke('mod-exists', root, name),
   installMod: (...args) => ipcRenderer.invoke('install-mod', ...args),
   installWork: (root, options) => ipcRenderer.invoke('install-work', root, options),
+  searchThirdPartyMods: query => ipcRenderer.invoke('search-third-party-mods', query),
+  downloadThirdPartyMod: item => ipcRenderer.invoke('download-third-party-mod', item),
+  onThirdPartyDownloadProgress: callback => {
+    const listener = (_event, progress) => callback(progress)
+    ipcRenderer.on('third-party-download-progress', listener)
+    return () => ipcRenderer.removeListener('third-party-download-progress', listener)
+  },
   onInstallWorkProgress: callback => {
     const listener = (_event, progress) => callback(progress)
     ipcRenderer.on('install-work-progress', listener)

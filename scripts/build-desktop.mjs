@@ -24,6 +24,7 @@ await mkdir(appFiles, { recursive: true })
 await cp(path.join(root, 'dist'), path.join(appFiles, 'dist'), { recursive: true })
 await cp(path.join(root, 'electron', 'main.cjs'), path.join(appFiles, 'main.cjs'))
 await cp(path.join(root, 'electron', 'preload.cjs'), path.join(appFiles, 'preload.cjs'))
+await cp(path.join(root, 'electron', 'third-party-mods.cjs'), path.join(appFiles, 'third-party-mods.cjs'))
 // main.cjs 依赖这个无第三方依赖的 ZIP 模块，漏掉它「下载即安装」会在运行时报 require 失败
 await cp(path.join(root, 'electron', 'zip.cjs'), path.join(appFiles, 'zip.cjs'))
 // 更新改走「下载安装包 + 静默安装」后，这里不再需要打包替换脚本。
@@ -57,7 +58,7 @@ await rename(updateZip, updatePackage)
 // 由安装程序自己去等待旧进程退出、替换文件、重启，而不是我们拿脚本去替换 resources/app
 // （那条路会在文件占用与时序上翻车）。清单里因此要带上安装包的下载地址。
 const installerUrl = `https://github.com/aaszxx2/fengsha-mod-manager/releases/download/v${version}/Fengsha-Mod-Manager-Setup.exe`
-await writeFile(path.join(updateDirectory, 'latest.json'), JSON.stringify({ version, url: `/${path.posix.join('updates/windows', version, packageName)}`, installerUrl, size: bytes.length, sha256, releaseNotes: ["新增蓝图工坊：浏览建筑预览图，支持搜索、分类和点赞排序","登录并点赞后解锁蓝图代码，一键复制到游戏导入；代码由云端权限保护","上传作品可选择 MOD 或蓝图，蓝图支持预览图、代码、建筑说明及作者编辑删除"] }, null, 2))
+await writeFile(path.join(updateDirectory, 'latest.json'), JSON.stringify({ version, url: `/${path.posix.join('updates/windows', version, packageName)}`, installerUrl, size: bytes.length, sha256, releaseNotes: ["Nexus 模组无法在管理器内下载时，可直接打开对应的模组主页","第三方模组详情页新增明确的来源主页入口"] }, null, 2))
 const manifest = JSON.parse(await readFile(path.join(updateDirectory, 'latest.json'), 'utf8'))
 assert.equal(manifest.version, version)
 assert.equal(manifest.size, bytes.length)

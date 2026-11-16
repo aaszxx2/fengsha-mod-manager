@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { ArrowDownWideNarrow, ArrowDown, ArrowLeft, ArrowUp, BookOpen, Bot, Check, ChevronDown, ChevronRight, CircleAlert, CircleUserRound, Clipboard, CloudDownload, CloudOff, Download, FileArchive, Folder, FolderOpen, Gamepad2, Grid2X2, GripVertical, HardDrive, Heart, List, ListOrdered, LoaderCircle, Lock, LogOut, Mail, MessageCircle, Package, Pin, PinOff, Plus, RefreshCw, Search, Send, Settings, Share2, ShieldCheck, Star, Trash2, Unlock, Upload, Wallet, Wrench, X } from 'lucide-vue-next'
+import { ArrowDownWideNarrow, ArrowDown, ArrowLeft, ArrowUp, BookOpen, Bot, Check, ChevronDown, ChevronRight, CircleAlert, CircleUserRound, Clipboard, CloudDownload, CloudOff, Download, ExternalLink, FileArchive, Folder, FolderOpen, Gamepad2, Grid2X2, GripVertical, HardDrive, Heart, List, ListOrdered, LoaderCircle, Lock, LogOut, Mail, MessageCircle, Package, Pin, PinOff, Plus, RefreshCw, Search, Send, Settings, Share2, ShieldCheck, Star, Trash2, Unlock, Upload, Wallet, Wrench, X } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
 import BlueprintWorkshop from './BlueprintWorkshop.vue'
+import ThirdPartyWorkshop from './ThirdPartyWorkshop.vue'
 
 const GAME_PARTS = ['MOProject', 'Binaries', 'Win64', 'ue4ss', 'Mods']
 const mods = ref([])
@@ -2135,6 +2136,7 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
           <button class="side-link" :class="{ chosen: workshopView === 'discover' }" @click="selectWorkshopView('discover')"><Package :size="17"/><span>发现作品</span><b>{{ workshopWorks.length }}</b></button>
           <button class="side-link" :class="{ chosen: workshopView === 'newest' }" @click="selectWorkshopView('newest')"><Star :size="17"/><span>最新发布</span></button>
           <button class="side-link" :class="{ chosen: workshopView === 'all' }" @click="selectWorkshopView('all')"><RefreshCw :size="17"/><span>浏览全部</span></button>
+          <button class="side-link" :class="{ chosen: workshopView === 'external' }" @click="workshopView = 'external'; selectedWork = null"><ExternalLink :size="17"/><span>第三方来源</span></button>
           <div class="side-divider"></div><div class="side-section-label">作品分类</div>
           <button class="side-link category-link" :class="{ chosen: workshopCategory === category }" v-for="category in workshopCategories" :key="category" @click="workshopCategory = category"><span class="category-dot"></span><span>{{ category }}</span></button>
         </template>
@@ -2227,6 +2229,8 @@ onUnmounted(() => { window.removeEventListener('keydown', onKeydown); stopUpdate
           </div>
           <div class="list-footer"><span>显示 <b>{{ shownMods.length }}</b> / {{ mods.length }} 个条目</span><span class="scan-status"><i :class="{ online: gameReady }"></i>{{ scanning ? '正在扫描…' : gameReady ? 'UE4SS 已连接' : '等待选择游戏目录' }}</span></div>
         </div>
+        <ThirdPartyWorkshop v-else-if="activeTab === '工坊' && !centerDetail && workshopView === 'external'" />
+
         <section v-else-if="activeTab === '工坊' && !centerDetail" class="workshop-panel panel">
           <div class="page-heading"><div><span class="section-eyebrow">FENGSHA MOD WORKSHOP</span><h1>烽沙模组工坊</h1><p>发现玩家创作，分享你的战国世界。</p></div><button class="primary-button" @click="cloudUser ? startDraft() : openAuth('register')"><Plus :size="16"/>上传作品</button></div>
           <div v-if="workshopError" class="offline-banner"><CircleAlert :size="18"/><div><b>暂时无法连接工坊</b><span>{{ workshopError }}</span></div><button class="secondary-button" @click="refreshWorkshop">重试</button></div>
